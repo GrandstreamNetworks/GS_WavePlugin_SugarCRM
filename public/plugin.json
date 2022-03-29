@@ -1,0 +1,11 @@
+{
+  "name": "SugarCRM",
+  "version": "1.0.0.5",
+  "description": "SugarCRM is an innovative, flexible, and cost-effective CRM solution in the market created to build uniquely productive customer relationships. Its integration with Wave allows users to obtain customer information from SugarCRM, providing many opportunities to connect and strengthen relationships with customers.",
+  "icon": "/sugar_logo.png",
+  "permissions": [
+    "call.listen",
+    "call.dial"
+  ],
+  "plugin_type": "background"
+}
