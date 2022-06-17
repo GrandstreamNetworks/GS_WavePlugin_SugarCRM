@@ -102,39 +102,33 @@ const IndexPage = ({ login, saveUserConfig, loginLoading, getUserInfo }) => {
         })
     }, [])
     
-    return (
-        <>
-            {errorMessage && <div className={styles.errorDiv}>
-                <div className={styles.errorMessage}>{formatMessage({ id: errorMessage })}</div>
-            </div>}
-            <div className={styles.homePage}>
-                <Form
-                    className={styles.form}
-                    form={form}
-                    layout="vertical"
-                    onFinish={onFinish}
-                    onFocus={onfocus}
-                >
+    return (<>
+        {errorMessage && <div className={styles.errorDiv}>
+            <div className={styles.errorMessage}>{formatMessage({ id: errorMessage })}</div>
+        </div>}
+        <div className={styles.homePage}>
+            <Form
+                className={styles.form}
+                form={form}
+                layout="vertical"
+                onFinish={onFinish}
+                onFocus={onfocus}
+            >
+                <div className={styles.formContent}>
                     <Form.Item
                         name="hostAddress"
-                        rules={
-                            [{
-                                required: true,
-                                message: formatMessage({ id: 'login.host.error' })
-                            }]
-                        }
+                        rules={[{
+                            required: true, message: formatMessage({ id: 'login.host.error' })
+                        }]}
                     >
                         <Input placeholder={formatMessage({ id: 'login.host.address' })}
                                prefix={<Image src={HostIcon} preview={false}/>}/>
                     </Form.Item>
                     <Form.Item
                         name="username"
-                        rules={[
-                            {
-                                required: true,
-                                message: formatMessage({ id: 'login.username.error' })
-                            }
-                        ]}
+                        rules={[{
+                            required: true, message: formatMessage({ id: 'login.username.error' })
+                        }]}
                     >
                         <Input placeholder={formatMessage({ id: 'login.username' })}
                                prefix={<Image src={AccountIcon} preview={false}/>}
@@ -142,53 +136,42 @@ const IndexPage = ({ login, saveUserConfig, loginLoading, getUserInfo }) => {
                     </Form.Item>
                     <Form.Item
                         name="password"
-                        rules={[
-                            {
-                                required: true,
-                                message: formatMessage({ id: 'login.password.error' })
-                            }
-                        ]}
+                        rules={[{
+                            required: true, message: formatMessage({ id: 'login.password.error' })
+                        }]}
                     >
                         <Input.Password placeholder={formatMessage({ id: 'login.password' })}
                                         prefix={<Image src={CodeIcon} preview={false}/>}
-                                        iconRender={visible => (visible
-                                            ? <Image src={OpenIcon} preview={false}/>
-                                            : <Image src={CloseIcon} preview={false}/>)}
+                                        iconRender={visible => (visible ? <Image src={OpenIcon} preview={false}/> :
+                                            <Image src={CloseIcon} preview={false}/>)}
                         />
                     </Form.Item>
-                    <Form.Item>
-                        <Button type="primary" htmlType="submit" loading={loginLoading}>
-                            {formatMessage({ id: 'login.submit' })}
-                        </Button>
-                    </Form.Item>
-                    <div className={styles.remember}>
-                        <Checkbox checked={remember} onChange={onCheckChange}>
-                            {formatMessage({ id: 'login.remember' })}
-                        </Checkbox>
-                    </div>
-                </Form>
-            </div>
-            <Footer url="" message={formatMessage({ id: 'login.user.guide' })}/>
-        </>
-    );
+                </div>
+                <Form.Item>
+                    <Button type="primary" htmlType="submit" loading={loginLoading}>
+                        {formatMessage({ id: 'login.submit' })}
+                    </Button>
+                </Form.Item>
+                <div className={styles.remember}>
+                    <Checkbox checked={remember} onChange={onCheckChange}>
+                        {formatMessage({ id: 'login.remember' })}
+                    </Checkbox>
+                </div>
+            </Form>
+        </div>
+        <Footer url="https://documentation.grandstream.com/knowledge-base/wave-crm-add-ins/#overview"
+                message={formatMessage({ id: 'login.user.guide' })}/>
+    </>);
 };
 
-export default connect(
-    ({ loading }) => ({
-        loginLoading: loading.effects['login/login'] || loading.effects['global/getUserInfo'],
-    }),
-    (dispatch) => ({
-        login: payload => dispatch({
-            type: 'login/login',
-            payload,
-        }),
-        getUserInfo: payload => dispatch({
-            type: 'global/getUserInfo',
-            payload
-        }),
-        saveUserConfig: payload => dispatch({
-            type: 'global/saveUserConfig',
-            payload,
-        })
-    }),
-)(IndexPage);
+export default connect(({ loading }) => ({
+    loginLoading: loading.effects['login/login'] || loading.effects['global/getUserInfo'],
+}), (dispatch) => ({
+    login: payload => dispatch({
+        type: 'login/login', payload,
+    }), getUserInfo: payload => dispatch({
+        type: 'global/getUserInfo', payload
+    }), saveUserConfig: payload => dispatch({
+        type: 'global/saveUserConfig', payload,
+    })
+}),)(IndexPage);

@@ -4,9 +4,7 @@ import { Button, Col, Row } from 'antd';
 import { stringify } from 'qs';
 import moment from 'moment-timezone';
 import { ConnectError, ConnectState, Footer, SwitchBtn } from '@/components';
-import {
-    ACTION_TYPE, DATE_FORMAT, EVENT_KEY, MODULE_TYPE, SESSION_STORAGE_KEY, WAVE_CALL_TYPE
-} from '@/constant';
+import { ACTION_TYPE, DATE_FORMAT, EVENT_KEY, MODULE_TYPE, SESSION_STORAGE_KEY, WAVE_CALL_TYPE } from '@/constant';
 import { getNotificationBody } from '@/utils/utils';
 import styles from './index.less';
 
@@ -75,7 +73,7 @@ const HomePage = ({ getContact, putCallInfo, saveUserConfig, userConfig, session
                 console.log(res);
             });
         });
-    };
+    }
 
     /**
      * 获取sugarCRM系统URL
@@ -129,7 +127,7 @@ const HomePage = ({ getContact, putCallInfo, saveUserConfig, userConfig, session
                 notificationBody: getNotificationBody(body),
             })
         });
-    };
+    }
 
     useEffect(() => {
         /**
@@ -157,7 +155,7 @@ const HomePage = ({ getContact, putCallInfo, saveUserConfig, userConfig, session
 
             pluginSDK.eventEmitter.off(EVENT_KEY.initP2PCall);
         };
-    }, []);
+    }, [userConfig]);
 
     useEffect(() => {
         /**
@@ -168,7 +166,10 @@ const HomePage = ({ getContact, putCallInfo, saveUserConfig, userConfig, session
             console.log('onRejectP2PCall', callType, callNum);
             uploadCallInfo(callNum, 0, 0, WAVE_CALL_TYPE.in);
             if (callNumber.current === callNum) {
-                pluginSDK.hideNotification();
+                setTimeout(() => {
+                    // @ts-ignore
+                    pluginSDK.hideNotification();
+                }, 1000)
             }
         });
 
@@ -182,7 +183,10 @@ const HomePage = ({ getContact, putCallInfo, saveUserConfig, userConfig, session
             callDirection = callDirection === 'in' ? WAVE_CALL_TYPE.in : WAVE_CALL_TYPE.out;
             uploadCallInfo(callNum, callStartTimeStamp ?? 0, callEndTimeStamp ?? 0, callDirection);
             if (callNumber.current === callNum) {
-                pluginSDK.hideNotification();
+                setTimeout(() => {
+                    // @ts-ignore
+                    pluginSDK.hideNotification();
+                }, 1000)
             }
         });
 
@@ -190,7 +194,10 @@ const HomePage = ({ getContact, putCallInfo, saveUserConfig, userConfig, session
             console.log('p2PCallCanceled', callType, callNum);
             uploadCallInfo(callNum, 0, 0, WAVE_CALL_TYPE.miss);
             if (callNumber.current === callNum) {
-                pluginSDK.hideNotification();
+                setTimeout(() => {
+                    // @ts-ignore
+                    pluginSDK.hideNotification();
+                }, 1000)
             }
         });
 
@@ -203,26 +210,24 @@ const HomePage = ({ getContact, putCallInfo, saveUserConfig, userConfig, session
         }
     }, [userConfig, sessionId])
 
-    return (
-        <>
-            <ConnectError />
-            <div className={styles.homePage}>
-                <ConnectState />
-                <div className={styles.callConfig}>
-                    <Row>
-                        <Col span={19}>
-                            <span className={styles.spanLabel}>{formatMessage({ id: 'home.Synchronize' })}</span>
-                        </Col>
-                        <Col span={4}>
-                            <SwitchBtn />
-                        </Col>
-                    </Row>
-                </div>
-                <Button onClick={logoutClick}>{formatMessage({ id: 'home.logout' })}</Button>
+    return (<>
+        <ConnectError />
+        <div className={styles.homePage}>
+            <ConnectState />
+            <div className={styles.callConfig}>
+                <Row>
+                    <Col span={19}>
+                        <span className={styles.spanLabel}>{formatMessage({ id: 'home.Synchronize' })}</span>
+                    </Col>
+                    <Col span={4}>
+                        <SwitchBtn />
+                    </Col>
+                </Row>
             </div>
-            <Footer url={`${host}/index.php`} message={formatMessage({ id: 'home.toCRM' })} />
-        </>
-    );
+            <Button onClick={logoutClick}>{formatMessage({ id: 'home.logout' })}</Button>
+        </div>
+        <Footer url={`${host}/index.php`} message={formatMessage({ id: 'home.toCRM' })} />
+    </>);
 };
 
 export default connect(({ global }) => ({
