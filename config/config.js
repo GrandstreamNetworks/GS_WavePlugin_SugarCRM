@@ -12,6 +12,7 @@ export default defineConfig({
     antd: {},
     dva: {
         hmr: true,
+        lazyLoad: true,
     },
     // https://umijs.org/zh-CN/plugins/plugin-locale
     locale: {

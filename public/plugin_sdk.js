@@ -4,10 +4,86 @@
     (global = global || self, global.pluginSDK = factory());
 }(this, (function () { 'use strict';
 
+    var restCode = {
+      errorCode: {
+        FAIL: -1,
+        //失败
+        SUCCESS: 0,
+        CALLNUMBER_EMPTY: 1001,
+        //呼叫号码为空
+        LOG_MESSAGE_EMPTY: 1002,
+        //日志内容为空
+        SUBJECT_CANNOT_EMPTY: 1003,
+        SUBJECT_FORMAT_ERROR: 1004,
+        INVITEE_LENGTH_EXCEED: 1005,
+        INVITEE_FORMAT_ERROR: 1006,
+        PARAM_ERROR: 1007,
+        SESSION_TYPE_EMPTY: 1008,
+        MEMBERLIST_ERROR: 1009,
+        GROUP_CHAT_NAME_ERROR: 1010,
+        SESSION_ID_EMPTY: 1011,
+        MSGBODY_EMPTY: 1012,
+        MSGBODY_LENGTH_EXCEED: 1013,
+        PASSWORD_FORMAT_ERROR: 1014,
+        HOSTCODE_FORMAT_ERROR: 1015,
+        MEETING_NUM_ERROR: 1016,
+        AGENDA_ERROR: 1017,
+        EMAILREMINDTIME_ERROR: 1018,
+        TIME_ERROR: 1019,
+        MEMBER_LIST_EXCEED: 1020,
+        DISK_FULL: 1021,
+        USER_NOT_IN_SESSION: 1022,
+        USER_CONFIG_EMPTY: 1023,
+        //用户配置信息为空
+        MEETING_NUM_EMPTY: 1024,
+        SESSION_TYPE_ERROR: 1025,
+        MEETING_PARTICIPANT_REACH_MAX: 1026,
+        NO_AVAILABLE_RESOURCE: 1027,
+        ITEM_ALREADY_ADD: 1028
+      },
+      errorMsg: {
+        FAIL: "Operation fail",
+        //失败
+        SUCCESS: "Operation success",
+        CALLNUMBER_EMPTY: "callNum cannot be empty",
+        //呼叫号码为空
+        LOG_MESSAGE_EMPTY: "Log message cannot be empty",
+        //日志内容为空
+        SUBJECT_CANNOT_EMPTY: "Meeting subject cannot be empty",
+        SUBJECT_FORMAT_ERROR: "Meeting subject error",
+        INVITEE_LENGTH_EXCEED: "Invitees count over the max",
+        INVITEE_FORMAT_ERROR: "Invitees format error",
+        PARAM_ERROR: "Param error",
+        SESSION_TYPE_EMPTY: "Session type is empty",
+        MEMBERLIST_ERROR: "Member list error",
+        GROUP_CHAT_NAME_ERROR: "Group name error",
+        SESSION_ID_EMPTY: "Session id is empty",
+        MSGBODY_EMPTY: "Msg body is empty",
+        MSGBODY_LENGTH_EXCEED: "Msg body too long",
+        PASSWORD_FORMAT_ERROR: "Password format error",
+        HOSTCODE_FORMAT_ERROR: "HostCode format error",
+        MEETING_NUM_ERROR: "meetingNum error",
+        AGENDA_ERROR: "Agenda error",
+        EMAILREMINDTIME_ERROR: "Email remind time error",
+        TIME_ERROR: "Time error",
+        MEMBER_LIST_EXCEED: "Members count over the max",
+        DISK_FULL: "Disk full",
+        USER_NOT_IN_SESSION: "User has not this session",
+        USER_CONFIG_EMPTY: "Config is empty",
+        //用户配置信息为空
+        MEETING_NUM_EMPTY: "MeetingNum is empty",
+        SESSION_TYPE_ERROR: "Session type error",
+        MEETING_PARTICIPANT_REACH_MAX: "The maximum limit of participants has been reached. ",
+        NO_AVAILABLE_RESOURCE: "No available conference resource",
+        ITEM_ALREADY_ADD: "This item has been added."
+      }
+    };
+
     var action = {
       //通话相关
       makeP2PAudioCall: "makeP2PAudioCall",
       makeP2PVideoCall: "makeP2PVideoCall",
+      sendDTMF: "pluginSendDTMF",
       recvP2PIncomingCall: "recvP2PIncomingCall",
       answerP2PCall: "answerP2PCall",
       hangupP2PCall: "hangupP2PCall",
@@ -23,16 +99,32 @@
       getUserConfig: "getUserConfig",
       addUserConfig: "addUserConfig",
       setPluginSignature: 'setPluginSignature',
+      setPluginURLInterceptor: 'setPluginURLInterceptor',
       //窗口相关
       initPluginWindow: "initPluginWindow",
       hidePluginWin: "hidePluginWin",
       setDefaultWindow: "setDefaultWindow",
+      closePluginWindow: "closePluginWindow",
       //监听事件
       addPluginEventLister: 'addPluginEventLister',
       //显示插件通知消息
       showNotificationMsg: 'showNotificationMsg',
       //隐藏插件通知
-      hideNotificationMsg: 'hideNotificationMsg'
+      hideNotificationMsg: 'hideNotificationMsg',
+      //清除cookie
+      clearCookie: 'pluginClearCookie',
+      //插件操作事件回调
+      pluginActionCallback: 'pluginActionCallback',
+      //meeting相关
+      quickStart: 'pluginQuickStartMeeting',
+      scheduleMeeting: 'pluginScheduleMeeting',
+      joinMeeting: 'pluginJoinMeeting',
+      //聊天相关
+      setChatFileAttach: 'setChatFileAttach',
+      createSession: "pluginCreateSession",
+      sendMsg: "pluginSendMsg",
+      //通讯录相关
+      getContactList: "pluginGetContactList"
     };
 
     function createCommonjsModule(fn, module) {
@@ -536,20 +628,20 @@
     var pluginEvent = {}; //通话相关
     //接收p2p语音通话消息
 
-    pluginEvent.onRecvP2PIncomingCall = "onRecvP2PIncomingCall"; //接听音频通话
+    pluginEvent.onRecvIncomingCall = "onRecvP2PIncomingCall"; //接听音频通话
 
-    pluginEvent.onAnswerP2PCall = "onAnswerP2PCall"; //挂断通话
+    pluginEvent.onAnswerCall = "onAnswerP2PCall"; //挂断通话
 
-    pluginEvent.onHangupP2PCall = "onHangupP2PCall"; //拒接音频通话
+    pluginEvent.onHangupCall = "onHangupP2PCall"; //拒接音频通话
 
-    pluginEvent.onRejectP2PCall = "onRejectP2PCall"; //取消来电
+    pluginEvent.onRejectCall = "onRejectP2PCall"; //取消来电
 
-    pluginEvent.onP2PCallCanceled = 'onP2PCallCanceled'; //wave发起呼叫
+    pluginEvent.onCallCanceled = "onP2PCallCanceled"; //wave发起呼叫
 
-    pluginEvent.onInitP2PCall = 'onInitP2PCall'; //窗口相关
+    pluginEvent.onInitCall = "onInitP2PCall"; //窗口相关
     //窗口初始化成功
 
-    pluginEvent.onInitPluginWindowOk = 'onInitPluginWindowOk';
+    pluginEvent.onInitPluginWindow = 'onInitPluginWindowOk';
 
     // 7.2.9 SameValue(x, y)
     var _sameValue = Object.is || function is(x, y) {
@@ -790,6 +882,257 @@
       ];
     });
 
+    var f$1 = {}.propertyIsEnumerable;
+
+    var _objectPie = {
+    	f: f$1
+    };
+
+    var gOPD = Object.getOwnPropertyDescriptor;
+
+    var f$2 = _descriptors ? gOPD : function getOwnPropertyDescriptor(O, P) {
+      O = _toIobject(O);
+      P = _toPrimitive(P, true);
+      if (_ie8DomDefine) try {
+        return gOPD(O, P);
+      } catch (e) { /* empty */ }
+      if (_has(O, P)) return _propertyDesc(!_objectPie.f.call(O, P), O[P]);
+    };
+
+    var _objectGopd = {
+    	f: f$2
+    };
+
+    // Works with __proto__ only. Old v8 can't work with null proto objects.
+    /* eslint-disable no-proto */
+
+
+    var check = function (O, proto) {
+      _anObject(O);
+      if (!_isObject(proto) && proto !== null) throw TypeError(proto + ": can't set as prototype!");
+    };
+    var _setProto = {
+      set: Object.setPrototypeOf || ('__proto__' in {} ? // eslint-disable-line
+        function (test, buggy, set) {
+          try {
+            set = _ctx(Function.call, _objectGopd.f(Object.prototype, '__proto__').set, 2);
+            set(test, []);
+            buggy = !(test instanceof Array);
+          } catch (e) { buggy = true; }
+          return function setPrototypeOf(O, proto) {
+            check(O, proto);
+            if (buggy) O.__proto__ = proto;
+            else set(O, proto);
+            return O;
+          };
+        }({}, false) : undefined),
+      check: check
+    };
+
+    var setPrototypeOf = _setProto.set;
+    var _inheritIfRequired = function (that, target, C) {
+      var S = target.constructor;
+      var P;
+      if (S !== C && typeof S == 'function' && (P = S.prototype) !== C.prototype && _isObject(P) && setPrototypeOf) {
+        setPrototypeOf(that, P);
+      } return that;
+    };
+
+    var shared = _shared('keys');
+
+    var _sharedKey = function (key) {
+      return shared[key] || (shared[key] = _uid(key));
+    };
+
+    var arrayIndexOf = _arrayIncludes(false);
+    var IE_PROTO = _sharedKey('IE_PROTO');
+
+    var _objectKeysInternal = function (object, names) {
+      var O = _toIobject(object);
+      var i = 0;
+      var result = [];
+      var key;
+      for (key in O) if (key != IE_PROTO) _has(O, key) && result.push(key);
+      // Don't enum bug & hidden keys
+      while (names.length > i) if (_has(O, key = names[i++])) {
+        ~arrayIndexOf(result, key) || result.push(key);
+      }
+      return result;
+    };
+
+    // IE 8- don't enum bug keys
+    var _enumBugKeys = (
+      'constructor,hasOwnProperty,isPrototypeOf,propertyIsEnumerable,toLocaleString,toString,valueOf'
+    ).split(',');
+
+    // 19.1.2.7 / 15.2.3.4 Object.getOwnPropertyNames(O)
+
+    var hiddenKeys = _enumBugKeys.concat('length', 'prototype');
+
+    var f$3 = Object.getOwnPropertyNames || function getOwnPropertyNames(O) {
+      return _objectKeysInternal(O, hiddenKeys);
+    };
+
+    var _objectGopn = {
+    	f: f$3
+    };
+
+    var _stringWs = '\x09\x0A\x0B\x0C\x0D\x20\xA0\u1680\u180E\u2000\u2001\u2002\u2003' +
+      '\u2004\u2005\u2006\u2007\u2008\u2009\u200A\u202F\u205F\u3000\u2028\u2029\uFEFF';
+
+    var space = '[' + _stringWs + ']';
+    var non = '\u200b\u0085';
+    var ltrim = RegExp('^' + space + space + '*');
+    var rtrim = RegExp(space + space + '*$');
+
+    var exporter = function (KEY, exec, ALIAS) {
+      var exp = {};
+      var FORCE = _fails(function () {
+        return !!_stringWs[KEY]() || non[KEY]() != non;
+      });
+      var fn = exp[KEY] = FORCE ? exec(trim) : _stringWs[KEY];
+      if (ALIAS) exp[ALIAS] = fn;
+      _export(_export.P + _export.F * FORCE, 'String', exp);
+    };
+
+    // 1 -> String#trimLeft
+    // 2 -> String#trimRight
+    // 3 -> String#trim
+    var trim = exporter.trim = function (string, TYPE) {
+      string = String(_defined(string));
+      if (TYPE & 1) string = string.replace(ltrim, '');
+      if (TYPE & 2) string = string.replace(rtrim, '');
+      return string;
+    };
+
+    var _stringTrim = exporter;
+
+    // 19.1.2.14 / 15.2.3.14 Object.keys(O)
+
+
+
+    var _objectKeys = Object.keys || function keys(O) {
+      return _objectKeysInternal(O, _enumBugKeys);
+    };
+
+    var _objectDps = _descriptors ? Object.defineProperties : function defineProperties(O, Properties) {
+      _anObject(O);
+      var keys = _objectKeys(Properties);
+      var length = keys.length;
+      var i = 0;
+      var P;
+      while (length > i) _objectDp.f(O, P = keys[i++], Properties[P]);
+      return O;
+    };
+
+    var document$1 = _global.document;
+    var _html = document$1 && document$1.documentElement;
+
+    // 19.1.2.2 / 15.2.3.5 Object.create(O [, Properties])
+
+
+
+    var IE_PROTO$1 = _sharedKey('IE_PROTO');
+    var Empty = function () { /* empty */ };
+    var PROTOTYPE$1 = 'prototype';
+
+    // Create object with fake `null` prototype: use iframe Object with cleared prototype
+    var createDict = function () {
+      // Thrash, waste and sodomy: IE GC bug
+      var iframe = _domCreate('iframe');
+      var i = _enumBugKeys.length;
+      var lt = '<';
+      var gt = '>';
+      var iframeDocument;
+      iframe.style.display = 'none';
+      _html.appendChild(iframe);
+      iframe.src = 'javascript:'; // eslint-disable-line no-script-url
+      // createDict = iframe.contentWindow.Object;
+      // html.removeChild(iframe);
+      iframeDocument = iframe.contentWindow.document;
+      iframeDocument.open();
+      iframeDocument.write(lt + 'script' + gt + 'document.F=Object' + lt + '/script' + gt);
+      iframeDocument.close();
+      createDict = iframeDocument.F;
+      while (i--) delete createDict[PROTOTYPE$1][_enumBugKeys[i]];
+      return createDict();
+    };
+
+    var _objectCreate = Object.create || function create(O, Properties) {
+      var result;
+      if (O !== null) {
+        Empty[PROTOTYPE$1] = _anObject(O);
+        result = new Empty();
+        Empty[PROTOTYPE$1] = null;
+        // add "__proto__" for Object.getPrototypeOf polyfill
+        result[IE_PROTO$1] = O;
+      } else result = createDict();
+      return Properties === undefined ? result : _objectDps(result, Properties);
+    };
+
+    var gOPN = _objectGopn.f;
+    var gOPD$1 = _objectGopd.f;
+    var dP$1 = _objectDp.f;
+    var $trim = _stringTrim.trim;
+    var NUMBER = 'Number';
+    var $Number = _global[NUMBER];
+    var Base = $Number;
+    var proto = $Number.prototype;
+    // Opera ~12 has broken Object#toString
+    var BROKEN_COF = _cof(_objectCreate(proto)) == NUMBER;
+    var TRIM = 'trim' in String.prototype;
+
+    // 7.1.3 ToNumber(argument)
+    var toNumber = function (argument) {
+      var it = _toPrimitive(argument, false);
+      if (typeof it == 'string' && it.length > 2) {
+        it = TRIM ? it.trim() : $trim(it, 3);
+        var first = it.charCodeAt(0);
+        var third, radix, maxCode;
+        if (first === 43 || first === 45) {
+          third = it.charCodeAt(2);
+          if (third === 88 || third === 120) return NaN; // Number('+0x1') should be NaN, old V8 fix
+        } else if (first === 48) {
+          switch (it.charCodeAt(1)) {
+            case 66: case 98: radix = 2; maxCode = 49; break; // fast equal /^0b[01]+$/i
+            case 79: case 111: radix = 8; maxCode = 55; break; // fast equal /^0o[0-7]+$/i
+            default: return +it;
+          }
+          for (var digits = it.slice(2), i = 0, l = digits.length, code; i < l; i++) {
+            code = digits.charCodeAt(i);
+            // parseInt parses a string to a first unavailable symbol
+            // but ToNumber should return NaN if a string contains unavailable symbols
+            if (code < 48 || code > maxCode) return NaN;
+          } return parseInt(digits, radix);
+        }
+      } return +it;
+    };
+
+    if (!$Number(' 0o1') || !$Number('0b1') || $Number('+0x1')) {
+      $Number = function Number(value) {
+        var it = arguments.length < 1 ? 0 : value;
+        var that = this;
+        return that instanceof $Number
+          // check on 1..constructor(foo) case
+          && (BROKEN_COF ? _fails(function () { proto.valueOf.call(that); }) : _cof(that) != NUMBER)
+            ? _inheritIfRequired(new Base(toNumber(it)), that, $Number) : toNumber(it);
+      };
+      for (var keys = _descriptors ? gOPN(Base) : (
+        // ES3:
+        'MAX_VALUE,MIN_VALUE,NaN,NEGATIVE_INFINITY,POSITIVE_INFINITY,' +
+        // ES6 (in case, if modules with ES6 Number statics required before):
+        'EPSILON,isFinite,isInteger,isNaN,isSafeInteger,MAX_SAFE_INTEGER,' +
+        'MIN_SAFE_INTEGER,parseFloat,parseInt,isInteger'
+      ).split(','), j = 0, key; keys.length > j; j++) {
+        if (_has(Base, key = keys[j]) && !_has($Number, key)) {
+          dP$1($Number, key, gOPD$1(Base, key));
+        }
+      }
+      $Number.prototype = proto;
+      proto.constructor = $Number;
+      _redefine(_global, NUMBER, $Number);
+    }
+
     //id
     var nLogNum = 1; //日志序列号
     //debug:1, log:2, info:3, warn:4, error:5
@@ -945,35 +1288,150 @@
       };
     }
 
-    /**
-     *  错误码
-     **/
-    var errorCode = {
-      FAIL: -1,
-      //失败
-      SUCCESS: 0,
-      CALLNUMBER_EMPTY: 1,
-      //呼叫号码为空
-      LOG_MESSAGE_EMPTY: 2,
-      //日志内容为空
-      USER_CONFIG_EMPTY: 3 //用户配置信息为空
-
-    };
-
     var common = {};
 
     common.getPluginId = function () {
-      var _window$location$sear = window.location.search,
-          search = _window$location$sear === void 0 ? '' : _window$location$sear;
+      var _window$location = window.location,
+          _window$location$sear = _window$location.search,
+          search = _window$location$sear === void 0 ? '' : _window$location$sear,
+          origin = _window$location.origin,
+          pathname = _window$location.pathname;
       var query = new URLSearchParams(search);
 
-      if (query) {
+      if (query && origin === "file://" && pathname.indexOf('index.html') !== -1) {
         var pluginId = query.get('pluginId');
         return pluginId;
       }
 
       return '';
     };
+
+    common.getWaveDesktopVersion = function () {
+      var _window$location2 = window.location,
+          _window$location2$sea = _window$location2.search,
+          search = _window$location2$sea === void 0 ? '' : _window$location2$sea,
+          origin = _window$location2.origin,
+          pathname = _window$location2.pathname;
+      var query = new URLSearchParams(search);
+
+      if (query && origin === "file://" && pathname.indexOf('index.html') !== -1) {
+        var desktopVersion = query.get('desktopVersion');
+        return desktopVersion;
+      }
+
+      return '';
+    };
+
+    common.getIsWaveSupportPlugin = function () {
+      var _window$location3 = window.location,
+          _window$location3$sea = _window$location3.search,
+          search = _window$location3$sea === void 0 ? '' : _window$location3$sea,
+          origin = _window$location3.origin,
+          pathname = _window$location3.pathname;
+      var query = new URLSearchParams(search);
+
+      if (query && origin === "file://" && pathname.indexOf('index.html') !== -1) {
+        var isWaveSupportPlugin = query.get('isWaveSupportPlugin');
+
+        if (isWaveSupportPlugin) {
+          isWaveSupportPlugin = isNaN(Number(isWaveSupportPlugin)) ? 1 : Number(isWaveSupportPlugin);
+        }
+
+        return isWaveSupportPlugin;
+      }
+
+      return 1;
+    };
+
+    var pluginRequestCallback = new Array(); //请求回调，用于服务器返回数据处理
+
+    /**
+     *
+     * @type {{PrivateChat: number, GroupChat: number}}
+     */
+
+    var SessionType = {
+      PRIVATECHAT: 1,
+      //私聊
+      GROUPCHAT: 2,
+      //群聊
+      CONFHELPER: 3 //会议小助手
+
+    };
+    var MsgType = {
+      //1表示普通文本消息，2表示文件，3表示图片，4表示系统通知, 5合并转发, 7会议小助手消息,8语音消息
+      TEXT: 1,
+      FILE: 2,
+      IMAGE: 3,
+      NOTIFICATION: 4,
+      MERGERFWD: 5,
+      CONFNOTIFICATION: 7,
+      VOICEMSG: 8
+    };
+    /**
+     * 系统通知类型
+     * 1表示有新用户用户进群，2可表示有用户离开群，3表示解散群，4表示更改群名, 5表示被踢除群聊, 6表示群主转移，7表示消息撤回,8表示编辑已发送的消息
+     * 9、表情回复，10、撤回表情回复，11、是否允许群成员邀请新成员
+     * @type {{joinSession: number, leaveSession: number, deleteSession: number, updateGroupName: number}}
+     */
+
+    var MsgSubType = {
+      JOINGROUP: 1,
+      LEAVEGROUP: 2,
+      DISMISSGROUP: 3,
+      UPDATEGROUPNAME: 4,
+      KICKEDOUTGROUP: 5,
+      OWNERTRANSFER: 6,
+      DELETEMSG: 7,
+      EDITMSG: 8,
+      EMOJIREPLY: 9,
+      EMOJIREPLYREVORK: 10,
+      INVITEMEMBER: 11
+    };
+    /**
+     * 工作状态
+     * @type {{None: number, InMeeting: number, OnBusinessTrip: number, Telecommuting: number, SickLeave: number, OnHoliday: number, custom: number}}
+     */
+
+    var WorkStatus = {
+      NONE: 0,
+      //无
+      INMEETING: 1,
+      //会议中
+      ONBUSINESSTRIP: 2,
+      //出差中
+      TELECOMMUTING: 3,
+      //远程办公中
+      SICKLEAVE: 4,
+      //生病请假中
+      ONHOLIDAY: 5,
+      //休假中
+      CUSTOMIZE: 6 //自定义
+
+    };
+    /**
+     * 分机状态
+     * @type {{Idle: '空闲', InUse: '忙碌', Unavailable: '离线', dnd:'勿扰',Away:'离开'}}
+     */
+
+    var ExtensionStatus = {
+      IDLE: 'Idle',
+      INUSE: 'Inuse',
+      UNAVAILABLE: 'Unavailable',
+      DND: 'Dnd',
+      AWAY: 'Away'
+    };
+    var MeetingCycleType = {
+      DAILY: "DAILY",
+      WEEKLY: "WEEKLY",
+      MONTHLY: "MONTHLY"
+    };
+    var currentSDKVersion = "1.0.2";
+
+    /*
+    常量
+    */
+    var requestCallback = new Array(); //请求回调，用于服务器返回数据处理
 
     var _require = require('electron'),
         ipcRenderer = _require.ipcRenderer;
@@ -996,8 +1454,7 @@
 
 
     ipcRenderer.on('postMessage2pluginWindow', function (event$1, data) {
-      console.log('recv data from wave:' + JSON.stringify(data));
-
+      // console.log('plugin recv data from wave:' + JSON.stringify(data))
       if (data.action === action.initPluginWindow) {
         //初始化插件
         pluginWinInfo.pluginId = data.pluginId; // pluginWinInfo.pluginWin = data.pluginWindow;
@@ -1007,22 +1464,28 @@
         var initData = {
           //pluginId: data.pluginId,
           userConfig: data.userConfig,
-          pluginPath: data.pluginPath
+          pluginPath: data.pluginPath,
+          originModule: data.originModule //用于Google Driver插件，不同模块，不同模块插件页面展现不一致
+
         };
-        event.getEventInstance().trigger(pluginEvent.onInitPluginWindowOk, initData);
+        pluginWinInfo.sessionId = data.sessionId; //用户Google Driver，打开时切换session导致取文件错误
+
+        pluginWinInfo.desktopVersion = data.desktopVersion;
+        pluginWinInfo.isWaveSupportPlugin = data.isWaveSupportPlugin;
+        event.getEventInstance().trigger(pluginEvent.onInitPluginWindow, initData);
       } else if (data.action === action.recvP2PIncomingCall) {
         //收到来电
         var callMsg = {
           callType: data.callType,
           callNum: data.callNum
         };
-        event.getEventInstance().trigger(pluginEvent.onRecvP2PIncomingCall, callMsg);
+        event.getEventInstance().trigger(pluginEvent.onRecvIncomingCall, callMsg);
       } else if (data.action === action.answerP2PCall) {
         var _callMsg = {
           callType: data.callType,
           callNum: data.callNum
         };
-        event.getEventInstance().trigger(pluginEvent.onAnswerP2PCall, _callMsg);
+        event.getEventInstance().trigger(pluginEvent.onAnswerCall, _callMsg);
       } else if (data.action === action.hangupP2PCall) {
         var _callMsg2 = {
           callType: data.callType,
@@ -1031,24 +1494,27 @@
           callEndTimeStamp: data.callEndTimeStamp,
           callDirection: data.callDirection
         };
-        event.getEventInstance().trigger(pluginEvent.onHangupP2PCall, _callMsg2);
+        event.getEventInstance().trigger(pluginEvent.onHangupCall, _callMsg2);
       } else if (data.action === action.rejectP2PCall) {
         var _callMsg3 = {
           callType: data.callType,
           callNum: data.callNum
         };
-        event.getEventInstance().trigger(pluginEvent.onRejectP2PCall, _callMsg3);
+        event.getEventInstance().trigger(pluginEvent.onRejectCall, _callMsg3);
       } else if (data.action === action.P2PCallCanceled) {
         var _callMsg4 = {
           callNum: data.callNum
         };
-        event.getEventInstance().trigger(pluginEvent.onP2PCallCanceled, _callMsg4);
+        event.getEventInstance().trigger(pluginEvent.onCallCanceled, _callMsg4);
       } else if (data.action === action.initP2PCall) {
         var _callMsg5 = {
           callNum: data.callNum,
           callType: data.callType
         };
-        event.getEventInstance().trigger(pluginEvent.onInitP2PCall, _callMsg5);
+        event.getEventInstance().trigger(pluginEvent.onInitCall, _callMsg5);
+      } else if (data.action === action.pluginActionCallback) {
+        //处理插件操作事件的回调
+        handlerRecvEventCallback(data);
       }
     });
 
@@ -1081,6 +1547,18 @@
       if (pluginId) {
         pluginWinInfo.pluginId = pluginId;
       }
+
+      var isWaveSupportPlugin = common.getIsWaveSupportPlugin();
+
+      if (isWaveSupportPlugin !== undefined) {
+        pluginWinInfo.isWaveSupportPlugin = isWaveSupportPlugin;
+      }
+
+      var desktopVersion = common.getWaveDesktopVersion();
+
+      if (desktopVersion) {
+        pluginWinInfo.desktopVersion = desktopVersion;
+      }
     };
     /**
      * 加载js时从url中获取pluginId;
@@ -1088,6 +1566,29 @@
 
 
     electronEvent.initPluginId();
+
+    function handlerRecvEventCallback(data) {
+      for (var i = 0; i < pluginRequestCallback.length; i++) {
+        if (data.requestId === pluginRequestCallback[i].requestId) {
+          break;
+        }
+      }
+
+      var response = {
+        errorCode: data.errorCode,
+        errorMsg: data.errorMsg
+      };
+
+      if (data.errorCode === restCode.errorCode.SUCCESS) {
+        response.data = data.data;
+      }
+
+      if (pluginRequestCallback[i]) {
+        pluginRequestCallback[i].callback(response);
+      }
+
+      requestCallback.splice(i, 1);
+    }
 
     /*
     将插件绑定的事件传递给wave
@@ -1111,242 +1612,68 @@
     };
 
     /*
-    通话相关
-     */
-    var calls = {};
-    /**
-     * 音频通话
-     * @param data {callNumber:'呼叫号码'}
-     * @param callback
-     */
-
-    calls.makeP2PAudioCall = function (data, callback) {
-      if (!data || !data.callNumber) {
-        callback({
-          errorCode: errorCode.CALLNUMBER_EMPTY
-        });
-        return false;
-      }
-
-      var jsonBody = {
-        callNumber: data.callNumber
-      };
-      electronEvent.postMsgToWave(action.makeP2PAudioCall, jsonBody);
-      callback({
-        errorCode: errorCode.SUCCESS
-      });
-    };
-    /**
-     * 视频通话
-     * @param data {callNumber:'呼叫号码'}
-     * @param callback
-     */
-
-
-    calls.makeP2PVideoCall = function (data, callback) {
-      if (!data || !data.callNumber) {
-        callback({
-          errorCode: errorCode.CALLNUMBER_EMPTY
-        });
-        return false;
-      }
-
-      var jsonBody = {
-        callNumber: data.callNumber
-      };
-      electronEvent.postMsgToWave(action.makeP2PVideoCall, jsonBody);
-      callback({
-        errorCode: errorCode.SUCCESS
-      });
-    };
-
-    /*
-    日志模块
-     */
-    var logger$1 = {};
-    /**
-     * log 打印
-     * @param data
-     */
-
-    logger$1.log = function (data) {
-      if (!data) {
-        callback({
-          errorCode: errorCode.LOG_MESSAGE_EMPTY
-        });
-        return false;
-      }
-
-      var jsonBody = {
-        message: data
-      };
-      electronEvent.postMsgToWave(action.logLog, jsonBody);
-    };
-    /**
-     * info日志 打印
-     * @param data
-     */
-
-
-    logger$1.info = function (data) {
-      console.log('recv message from plugin:' + data);
-
-      if (!data) {
-        callback({
-          errorCode: errorCode.LOG_MESSAGE_EMPTY
-        });
-        return false;
-      }
-
-      var jsonBody = {
-        message: data
-      };
-      electronEvent.postMsgToWave(action.logInfo, jsonBody);
-    };
-    /**
-     * warn日志 打印
-     * @param data
-     */
-
-
-    logger$1.warn = function (data) {
-      if (!data) {
-        callback({
-          errorCode: errorCode.LOG_MESSAGE_EMPTY
-        });
-        return false;
-      }
-
-      var jsonBody = {
-        message: data
-      };
-      electronEvent.postMsgToWave(action.logWarn, jsonBody);
-    };
-    /**
-     * warn日志 打印
-     * @param data
-     */
-
-
-    logger$1.error = function (data) {
-      if (!data) {
-        callback({
-          errorCode: errorCode.LOG_MESSAGE_EMPTY
-        });
-        return false;
-      }
-
-      var jsonBody = {
-        message: data
-      };
-      electronEvent.postMsgToWave(action.logError, jsonBody);
-    };
-
-    /*
-    用户配置信息存取
-     */
-    var userConfig = {};
-    /**
-     * 存用户信息
-     * @param data {config:'配置信息'(json)}
-     */
-
-    userConfig.addUserConfig = function (data, callback) {
-      if (!data || !data.userConfig) {
-        callback({
-          errorCode: errorCode.USER_CONFIG_EMPTY
-        });
-        return false;
-      }
-
-      var message = {
-        userConfig: data.userConfig
-      }; //更新内存中的配置
-
-      electronEvent.updatePluginConfig(data);
-      electronEvent.postMsgToWave(action.addUserConfig, message);
-      callback({
-        errorCode: errorCode.SUCCESS
-      });
-    };
-    /**
-     * 取用户信息
-     * @param data {config:'配置信息'(json)}
-     */
-
-
-    userConfig.getUserConfig = function (callback) {
-      // electronEvent.postMsgToWave(action.getUserConfig, message)
-      var pluginInfo = electronEvent.getPluginInfo();
-
-      if (pluginInfo.userConfig) {
-        callback({
-          errorCode: errorCode.SUCCESS,
-          data: pluginInfo.userConfig
-        });
-        return false;
-      } else {
-        var pluginInfoJson = sessionStorage.getItem('plugin_info');
-
-        if (pluginInfoJson) {
-          try {
-            var pluginInfoObject = JSON.parse(pluginInfoJson);
-
-            if (pluginInfoObject && pluginInfoObject.userConfig) {
-              callback({
-                errorCode: errorCode.SUCCESS,
-                data: pluginInfo.userConfig
-              });
-              return false;
-            }
-          } catch (e) {
-            console.log('plugin parse json error');
-          }
-        }
-      }
-
-      callback({
-        errorCode: errorCode.FAIL
-      });
-    };
-    /**
-     * 设置插件签名
-     * @param data {signature:'签名字符串'}
-     */
-
-
-    userConfig.setPluginSignature = function (data) {
-      if (!data || !data.signature) {
-        console.error('plugin signature empty');
-        return;
-      }
-
-      var message = {
-        signature: data.signature
-      };
-      electronEvent.postMsgToWave(action.setPluginSignature, message);
-    };
-
-    /*
     窗口相关
      */
     var pluginWin = {};
     /**
+     * 关闭窗口
+     * @type {boolean}
+     */
+
+    pluginWin.closeWindow = function () {
+      electronEvent.postMsgToWave(action.closePluginWindow, {});
+    };
+    /**
      * 插件窗口隐藏
      */
+
 
     pluginWin.hideWindow = function () {
       electronEvent.postMsgToWave(action.hidePluginWin, {});
     };
     /**
      * 使用默认窗口并显示
-     * @param data {width:'宽度',height:'高度',
-     * winX:'窗口相对于屏幕左侧的偏移量(如果使用了Y,此必选)',winY:'窗口相对于屏幕顶端的偏移量(如果使用了X,此必选)',
+     * @param data {width:'宽度, int',height:'高度, int',
+     * winX:'窗口相对于屏幕左侧的偏移量(如果使用了Y,此必选), int',winY:'窗口相对于屏幕顶端的偏移量(如果使用了X,此必选), int',
      * center:'是否居中（与X,Y互斥）',show:'是否显示'}
      */
 
 
     pluginWin.setDefaultWindow = function (data) {
+      if (data.winY && !data.winX || !data.winY && data.winX) {
+        return;
+      }
+
+      var param = {};
+
+      if (data.width) {
+        param.width = data.width;
+      }
+
+      if (data.height) {
+        param.height = data.height;
+      }
+
+      if (data.winX) {
+        param.winX = data.winX;
+      }
+
+      if (data.winY) {
+        param.winY = data.winY;
+      }
+
+      if (data.center !== undefined && typeof data.center !== 'boolean' || data.show !== undefined && typeof data.show !== 'boolean') {
+        return;
+      }
+
+      if (data.center !== undefined) {
+        param.center = data.center;
+      }
+
+      if (data.show !== undefined) {
+        param.show = data.show;
+      }
+
       electronEvent.postMsgToWave(action.setDefaultWindow, data);
     };
     /**
@@ -1373,37 +1700,223 @@
     };
 
     /*
-    * 暴露给上层的接口
-    */
-    var pluginSDK = {};
-    pluginSDK.call = {};
+    通话相关
+     */
+    var calls = {};
     /**
      * 音频通话
-     * @param data {callNumber:'呼叫号码'(String)}
+     * @param data {callNumber:'呼叫号码'}
      * @param callback
      */
 
-    pluginSDK.call.makeP2PAudioCall = function (data, callback) {
+    calls.makeP2PAudioCall = function (data, callback) {
+      if (typeof callback !== "function") {
+        console.error('makeP2PAudioCall callback not function');
+        return;
+      }
+
+      if (!data || !data.callNumber) {
+        callback({
+          errorCode: restCode.errorCode.CALLNUMBER_EMPTY,
+          errorMsg: restCode.errorMsg.CALLNUMBER_EMPTY
+        });
+        return false;
+      }
+
+      var jsonBody = {
+        callNumber: data.callNumber
+      };
+      electronEvent.postMsgToWave(action.makeP2PAudioCall, jsonBody);
+      callback({
+        errorCode: restCode.errorCode.SUCCESS,
+        errorMsg: restCode.errorMsg.SUCCESS
+      });
+    };
+    /**
+     * 视频通话
+     * @param data {callNumber:'呼叫号码'}
+     * @param callback
+     */
+
+
+    calls.makeP2PVideoCall = function (data, callback) {
+      if (typeof callback !== "function") {
+        console.error('makeP2PVideoCall callback not function');
+        return;
+      }
+
+      if (!data || !data.callNumber) {
+        callback({
+          errorCode: restCode.errorCode.CALLNUMBER_EMPTY,
+          errorMsg: restCode.errorMsg.CALLNUMBER_EMPTY
+        });
+        return false;
+      }
+
+      var jsonBody = {
+        callNumber: data.callNumber
+      };
+      electronEvent.postMsgToWave(action.makeP2PVideoCall, jsonBody);
+      callback({
+        errorCode: restCode.errorCode.SUCCESS,
+        errorMsg: restCode.errorMsg.SUCCESS
+      });
+    };
+    /**
+     * 发送DTMF
+     * @param data {digits: 按键值 数字类型的字符串 string， 必填}
+     * @param callback
+     */
+
+
+    calls.sendDTMF = function (data, callback) {
+      if (typeof callback !== "function") {
+        console.error('sendDTMF callback not function');
+        return;
+      }
+
+      if (!data || !data.digits) {
+        callback({
+          errorCode: restCode.errorCode.PARAM_EMPTY,
+          errorMsg: restCode.errorMsg.PARAM_EMPTY
+        });
+        return false;
+      }
+
+      var dtmfContent = {
+        digits: data.digits
+      };
+      electronEvent.postMsgToWave(action.sendDTMF, dtmfContent);
+      callback({
+        errorCode: restCode.errorCode.SUCCESS,
+        errorMsg: restCode.errorMsg.SUCCESS
+      });
+    };
+
+    var callExt = {};
+    /**
+     * 音频通话
+     * @param data {callNumber:"呼叫号码,String, 必填, 如果为跨域分机则需要带cloud im配置前缀"}
+     * @param callback
+     */
+
+    callExt.makeP2PAudioCall = function (data, callback) {
       calls.makeP2PAudioCall(data, callback);
     };
     /**
      * 视频通话
-     * @param data {callNumber:'呼叫号码'(String)}
+     * @param data {callNumber:"呼叫号码,String, 必填, 如果为跨域分机则需要带cloud im配置前缀"}
      * @param callback
      */
 
 
-    pluginSDK.call.makeP2PVideoCall = function (data, callback) {
+    callExt.makeP2PVideoCall = function (data, callback) {
       calls.makeP2PVideoCall(data, callback);
     };
+    /**
+     * 发送DTMF
+     * @param data {digits: 按键值 数字类型的字符串(string)}
+     * @param callback
+     */
 
-    pluginSDK.log = {};
+
+    callExt.sendDTMF = function (data, callback) {
+      calls.sendDTMF(data, callback);
+    };
+
+    /*
+    日志模块
+     */
+    var logger$1 = {};
+    /**
+     * log 打印
+     * @param data
+     */
+
+    logger$1.log = function (data) {
+      if (!data) {
+        callback({
+          errorCode: restCode.errorCode.LOG_MESSAGE_EMPTY,
+          errorMsg: restCode.errorMsg.LOG_MESSAGE_EMPTY
+        });
+        return false;
+      }
+
+      var jsonBody = {
+        message: data
+      };
+      electronEvent.postMsgToWave(action.logLog, jsonBody);
+    };
+    /**
+     * info日志 打印
+     * @param data
+     */
+
+
+    logger$1.info = function (data) {
+      console.log('recv message from plugin:' + data);
+
+      if (!data) {
+        callback({
+          errorCode: restCode.errorCode.LOG_MESSAGE_EMPTY,
+          errorMsg: restCode.errorMsg.LOG_MESSAGE_EMPTY
+        });
+        return false;
+      }
+
+      var jsonBody = {
+        message: data
+      };
+      electronEvent.postMsgToWave(action.logInfo, jsonBody);
+    };
+    /**
+     * warn日志 打印
+     * @param data
+     */
+
+
+    logger$1.warn = function (data) {
+      if (!data) {
+        callback({
+          errorCode: restCode.errorCode.LOG_MESSAGE_EMPTY,
+          errorMsg: restCode.errorMsg.LOG_MESSAGE_EMPTY
+        });
+        return false;
+      }
+
+      var jsonBody = {
+        message: data
+      };
+      electronEvent.postMsgToWave(action.logWarn, jsonBody);
+    };
+    /**
+     * warn日志 打印
+     * @param data
+     */
+
+
+    logger$1.error = function (data) {
+      if (!data) {
+        callback({
+          errorCode: restCode.errorCode.LOG_MESSAGE_EMPTY,
+          errorMsg: restCode.errorMsg.LOG_MESSAGE_EMPTY
+        });
+        return false;
+      }
+
+      var jsonBody = {
+        message: data
+      };
+      electronEvent.postMsgToWave(action.logError, jsonBody);
+    };
+
+    var logExt = {};
     /**
      * 打印错误日志
      * @param message:'日志'(String)
      */
 
-    pluginSDK.log.error = function (message) {
+    logExt.error = function (message) {
       logger$1.error(message);
     };
     /**
@@ -1412,7 +1925,7 @@
      */
 
 
-    pluginSDK.log.log = function (message) {
+    logExt.log = function (message) {
       logger$1.log(message);
     };
     /**
@@ -1421,7 +1934,7 @@
      */
 
 
-    pluginSDK.log.info = function (message) {
+    logExt.info = function (message) {
       logger$1.info(message);
     };
     /**
@@ -1430,16 +1943,692 @@
      */
 
 
-    pluginSDK.log.warn = function (message) {
+    logExt.warn = function (message) {
       logger$1.warn(message);
+    };
+
+    /*
+    用户配置信息存取
+     */
+    var userConfig = {};
+    /**
+     * 存用户信息
+     * @param data {config:'配置信息'(json)}
+     */
+
+    userConfig.addUserConfig = function (data, callback) {
+      if (!data || !data.userConfig) {
+        callback({
+          errorCode: restCode.errorCode.USER_CONFIG_EMPTY,
+          errorMsg: restCode.errorMsg.USER_CONFIG_EMPTY
+        });
+        return false;
+      }
+
+      var message = {
+        userConfig: data.userConfig
+      }; //更新内存中的配置
+
+      electronEvent.updatePluginConfig(data);
+      electronEvent.postMsgToWave(action.addUserConfig, message);
+      callback({
+        errorCode: restCode.errorCode.SUCCESS,
+        errorMsg: restCode.errorMsg.SUCCESS
+      });
+    };
+    /**
+     * 取用户信息
+     * @param data {config:'配置信息'(json)}
+     */
+
+
+    userConfig.getUserConfig = function (callback) {
+      // electronEvent.postMsgToWave(action.getUserConfig, message)
+      var pluginInfo = electronEvent.getPluginInfo();
+
+      if (pluginInfo.userConfig) {
+        callback({
+          errorCode: restCode.errorCode.SUCCESS,
+          data: pluginInfo.userConfig
+        });
+        return false;
+      } else {
+        var pluginInfoJson = sessionStorage.getItem('plugin_info');
+
+        if (pluginInfoJson) {
+          try {
+            var pluginInfoObject = JSON.parse(pluginInfoJson);
+
+            if (pluginInfoObject && pluginInfoObject.userConfig) {
+              callback({
+                errorCode: restCode.errorCode.SUCCESS,
+                data: pluginInfo.userConfig
+              });
+              return false;
+            }
+          } catch (e) {
+            console.log('plugin parse json error');
+          }
+        }
+      }
+
+      callback({
+        errorCode: restCode.errorCode.FAIL
+      });
+    };
+    /**
+     * 设置插件签名
+     * @param data {signature:'签名字符串'}
+     */
+
+
+    userConfig.setPluginSignature = function (data) {
+      if (!data || !data.signature) {
+        console.error('plugin signature empty');
+        return;
+      }
+
+      var message = {
+        signature: data.signature
+      };
+      electronEvent.postMsgToWave(action.setPluginSignature, message);
+    };
+
+    var userConfigExt = {};
+    /**
+     * 获取用户信息
+     * @param callback
+     */
+
+    userConfigExt.getUserConfig = function (callback) {
+      userConfig.getUserConfig(callback);
+    };
+    /**
+     * 存用户信息
+     * @param data {userConfig:'配置信息'(json)}
+     */
+
+
+    userConfigExt.addUserConfig = function (data, callback) {
+      userConfig.addUserConfig(data, callback);
+    };
+    /**
+     * 设置插件签名
+     * @param data {signature:'签名字符串'}
+     */
+
+
+    userConfigExt.setPluginSignature = function (data) {
+      userConfig.setPluginSignature(data);
+    };
+
+    var meeting = {};
+    /**
+     * 即时会议
+     * @param {subject:'主题（string, 120位,必填）, invitees:'userObject数组, 受邀者不超过300人，选填'}
+     * invitees:[{memberExtension:'分机号', email:"邮箱"}]
+     * memberExtension 与email必填一个,可同时带
+     * invitees没有受邀者带空数组或不带此属性
+     */
+
+    meeting.quickStart = function (data, callback) {
+      if (typeof callback !== "function") {
+        console.error('quickStart callback not function');
+        return;
+      }
+
+      if (!data || !data.subject) {
+        callback({
+          errorCode: restCode.errorCode.SUBJECT_CANNOT_EMPTY,
+          errorMsg: restCode.errorMsg.SUBJECT_CANNOT_EMPTY
+        });
+        return;
+      }
+
+      var meetingParam = {
+        requestId: new Date().getTime(),
+        subject: data.subject,
+        invitees: data.invitees
+      };
+      var request = {
+        meetingParam: meetingParam,
+        requestId: meetingParam.requestId,
+        callback: callback
+      };
+      pluginRequestCallback.push(request);
+      electronEvent.postMsgToWave(action.quickStart, meetingParam);
+    };
+    /**
+     * 预约会议
+     * @param data {
+    * subject:'主题,120,string,必填',
+    * password:'密码，int，4-10位，选填',
+    * hostCode:'主持码，int, 4-10位,选填，如不填则随机生成',
+    * agenda:'会议议程，string,500位,选填',
+    * meetingType: '会议类型，0:随机会议号，1:固定会议号；当为1时，meetingNum必填'
+        * meetingNum:"固定会议室号码,int, 选填，不填则为随机会议号",
+    * autoCallInvite:"是否自动呼叫受邀者(0/1,选填，默认0)",
+    * allowParticipantsInvite:"是否允许参会者邀请,0/1,int,选填,默认0",
+    * emailRemindTime:'会前邮件提醒，值范围5-120, int, 选填,默认值为60',
+    * startTime:'会议开始时间, Unix时间戳（毫秒数）, int',
+    * endTime: '会议结束时间, Unix时间戳（毫秒数）, int',
+    * cycle:'循环会议规则, 不带则非循环会议, 值：DAILY, WEEKLY, MONTHLY',
+    * invitees:'受邀者, 对象数组，受邀者不超过300人，选填，如果为空则以当前wave的登录账号为主持人'
+     * }
+     * invitees:[{memberExtension:'分机号', email:"邮箱", isHost:'是否为主持人'}]
+     * memberExtension 与email必填一个,可同时带
+     * invitees没有受邀者带空数组或不带此属性
+     *
+     * @param callback
+     */
+
+
+    meeting.schedule = function (data, callback) {
+      if (typeof callback !== "function") {
+        console.log('callback not function');
+        return;
+      }
+
+      if (!data || !data.subject) {
+        callback({
+          errorCode: restCode.errorCode.SUBJECT_CANNOT_EMPTY,
+          errorMsg: restCode.errorMsg.SUBJECT_CANNOT_EMPTY
+        });
+        return;
+      }
+
+      var meetingParam = {
+        requestId: new Date().getTime(),
+        subject: data.subject,
+        password: data.password,
+        hostCode: data.hostCode,
+        agenda: data.agenda,
+        meetingType: data.meetingType,
+        meetingNum: data.meetingNum,
+        autoCallInvite: data.autoCallInvite,
+        allowParticipantsInvite: data.allowParticipantsInvite,
+        emailRemindTime: data.emailRemindTime,
+        startTime: data.startTime,
+        endTime: data.endTime,
+        cycle: data.cycle,
+        invitees: data.invitees
+      };
+      var request = {
+        meetingParam: meetingParam,
+        requestId: meetingParam.requestId,
+        callback: callback
+      };
+      pluginRequestCallback.push(request);
+      electronEvent.postMsgToWave(action.scheduleMeeting, meetingParam);
+    };
+    /**
+     * 加入会议接口
+     * @param data {meetingNum:'会议号， string, 必填', password:'会议密码，int, 选填'}
+     */
+
+
+    meeting.join = function (data, callback) {
+      if (typeof callback !== "function") {
+        console.error('join meeting callback not function');
+        return;
+      }
+
+      if (!data || !data.meetingNum) {
+        callback({
+          errorCode: restCode.errorCode.MEETING_NUM_ERROR,
+          errorMsg: restCode.errorMsg.MEETING_NUM_ERROR
+        });
+        return false;
+      }
+
+      var jsonBody = {
+        meetingNum: data.meetingNum,
+        password: data.password
+      };
+      electronEvent.postMsgToWave(action.joinMeeting, jsonBody);
+      callback({
+        errorCode: restCode.errorCode.SUCCESS,
+        errorMsg: restCode.errorMsg.SUCCESS
+      });
+    };
+
+    var meetingExt = {};
+    /**
+     * 即时会议
+     * @param {subject:'主题（string, 120位,必填）, invitees:'userObject数组, 受邀者不超过300人，选填'}
+     * invitees:[{memberExtension:'分机号', email:"邮箱"}]
+     * memberExtension 与email必填一个,可同时带
+     * invitees没有受邀者带空数组或不带此属性
+     */
+
+    meetingExt.quickStart = function (data, callback) {
+      meeting.quickStart(data, callback);
+    };
+    /**
+    * 预约会议
+    * @param data {
+    * subject:'主题,120,string,必填',
+    * password:'密码，int，4-10位，选填',
+    * hostCode:'主持码，int, 4-10位,选填，如不填则随机生成',
+    * agenda:'会议议程，string,500位,选填',
+    * meetingType: '会议类型，0:随机会议号，1:固定会议号；当为1时，meetingNum必填'
+    * meetingNum:"固定会议室号码,int, 选填，不填则为随机会议号",
+    * autoCallInvite:"是否自动呼叫受邀者(0/1,选填，默认0)",
+    * allowParticipantsInvite:"是否允许参会者邀请,0/1,int,选填,默认0",
+    * emailRemindTime:'会前邮件提醒，值范围5-120, int, 选填,默认值为60',
+    * startTime:'会议开始时间, Unix时间戳（毫秒数）, int',
+    * endTime: '会议结束时间, Unix时间戳（毫秒数）, int',
+    * cycle:'循环会议规则, 不带则非循环会议, 值：DAILY, WEEKLY, MONTHLY',
+    * invitees:'受邀者, 对象数组，受邀者不超过300人，选填，如果为空则以当前wave的登录账号为主持人'
+     * }
+     * invitees:[{memberExtension:'分机号', email:"邮箱", isHost:'是否为主持人'}]
+     * memberExtension 与email必填一个,可同时带
+     * invitees没有受邀者带空数组或不带此属性
+     *
+     * @param callback
+     */
+
+
+    meetingExt.schedule = function (data, callback) {
+      meeting.schedule(data, callback);
+    };
+    /**
+     * 加入会议接口
+     * @param data {meetingNum:'会议号， string 必填', password:'会议密码，int, 选填'}
+     */
+
+
+    meetingExt.join = function (data, callback) {
+      meeting.join(data, callback);
+    };
+
+    var message = {};
+    /**
+     * 发送聊天消息接口(单聊与群聊)(文本消息)
+     * @param data {sessionId:"会话id"(int类型)，msgBody:"聊天消息内容",atList:"群聊消息中指定@的成员账号"}
+     *
+     * 示例：{sessionId:100120023016,msgBody:"test1", atList:["92","93","all"]}(atList:是通讯录中的userId)
+     *@param callback function
+     */
+
+    message.sendChatMsg = function (data, callback) {
+      if (typeof callback !== "function") {
+        console.error('sendChatMsg callback not function');
+        return;
+      }
+
+      if (!data) {
+        callback({
+          errorCode: restCode.errorCode.PARAM_EMPTY,
+          errorInfo: restCode.errorMsg.PARAM_EMPTY
+        });
+        return false;
+      }
+
+      var messageParam = {
+        requestId: new Date().getTime(),
+        sessionId: data.sessionId,
+        msgBody: data.msgBody,
+        atList: data.atList
+      };
+      var request = {
+        messageParam: messageParam,
+        requestId: messageParam.requestId,
+        callback: callback
+      };
+      pluginRequestCallback.push(request);
+      electronEvent.postMsgToWave(action.sendMsg, messageParam);
+    };
+
+    var session = {};
+    /**
+     * 创建会话
+     * sessionType: 1/2,1表示单聊，2表示群聊,
+     * @param data {"sessionType":"session类型(int，必填)","groupName":“群组名(string,选填, 80)",memberList:"需要添加的成员列表(int数组，必填)"}
+     * @param callback
+     * memberList样例：memberList: [8002, 8003]
+     * memberList可不带自己
+     */
+
+    session.createSession = function (data, callback) {
+      if (typeof callback !== "function") {
+        console.error('createSession callback not function');
+        return;
+      }
+
+      if (!data) {
+        callback({
+          errorCode: restCode.errorCode.PARAM_EMPTY,
+          errorInfo: restCode.errorMsg.PARAM_EMPTY
+        });
+        return false;
+      }
+
+      var sessionParam = {
+        requestId: new Date().getTime(),
+        sessionType: data.sessionType,
+        memberList: data.memberList,
+        name: data.groupName
+      };
+      var request = {
+        sessionParam: sessionParam,
+        requestId: sessionParam.requestId,
+        callback: callback
+      };
+      pluginRequestCallback.push(request);
+      electronEvent.postMsgToWave(action.createSession, sessionParam);
+    };
+
+    var im = {};
+    /**
+     * 设置附件信息
+     * @param data {url: '文件url'}
+     * @param callback
+     */
+
+    im.setChatFileAttach = function (data, callback) {
+      if (typeof callback !== "function") {
+        console.error('setChatFileAttach callback not function');
+        return;
+      }
+
+      if (!data || !data.url) {
+        callback({
+          errorCode: restCode.errorCode.PARAM_EMPTY,
+          errorInfo: restCode.errorMsg.PARAM_EMPTY
+        });
+        return;
+      }
+
+      var pluginInfo = electronEvent.getPluginInfo();
+      var chatAttachParam = {
+        requestId: new Date().getTime(),
+        url: data.url,
+        sessionId: pluginInfo.sessionId
+      }; // Object.assign(chatAttachParam, data);
+
+      var request = {
+        chatAttachParam: chatAttachParam,
+        requestId: chatAttachParam.requestId,
+        callback: callback
+      };
+      pluginRequestCallback.push(request);
+      electronEvent.postMsgToWave(action.setChatFileAttach, chatAttachParam);
+    };
+
+    var chatExt = {};
+    /**
+     * 创建会话
+     * sessionType: 1/2,1表示单聊，2表示群聊,
+     * @param data {
+     * sessionType:"session类型(int，必填)",
+     * groupName:“群组名(string,选填, 80)",
+     * memberList:"需要添加的成员userId列表(int数组，必填最多500人（含自己）)"
+     * }
+     *
+     * memberList样例：memberList: [8002, 8003]
+     * memberList可不带自己
+     *
+     * @param callback {errorCode: '错误码',data:'session对象'}
+     * 示例：{"errorCode":0,"errorMsg":"Operation success","data":{"sessionId":7036,"sessionType":1,"groupName":"","userIDBigger":6088,"userIDSmaller":6088,"userNameBigger":"dlliu-1145 -测试测试","userNameSmaller":"dlliu-1145 -测试测试"}}
+     * session对象:
+     *sessionId：int 会话id
+     *sessionType: int 会话类型 1表示单聊，2表示群聊
+     * groupName: string 群名
+     *userIDBigger:单聊中user_id数字较大的一方
+     * userIDSmaller:单聊中user_id数字较小的一方
+     * userNameBigger:单聊中user_id数字较大一方的名称
+     * userNameSmaller:单聊中user_id数字较小一方的名称
+     */
+
+    chatExt.createSession = function (data, callback) {
+      session.createSession(data, function (result) {
+        if (result) {
+          if (result.errorCode !== restCode.errorCode.SUCCESS || !result.data) {
+            callback(result);
+          } else {
+            var _session = {
+              sessionId: result.data.sessionId,
+              sessionType: result.data.sessionType,
+              groupName: result.data.groupName,
+              userIDBigger: result.data.userIDBigger,
+              userIDSmaller: result.data.userIDSmaller,
+              userNameBigger: result.data.userNameBigger,
+              userNameSmaller: result.data.userNameSmaller
+            };
+            callback({
+              errorCode: restCode.errorCode.SUCCESS,
+              errorMsg: restCode.errorMsg.SUCCESS,
+              data: _session
+            });
+          }
+        } else {
+          callback({
+            errorCode: restCode.errorCode.FAIL,
+            errorMsg: restCode.errorMsg.FAIL
+          });
+        }
+      });
+    };
+    /**
+     * 发送聊天消息接口(单聊与群聊)(文本消息)
+     * @param data {
+     * sessionId:"会话id,int类型, 必填"，
+     * msgBody:"聊天消息内容, string, 最多5000,必填"
+     * }
+     * 示例：{sessionId:100120023016,msgBody:"test1"}
+     *@param callback {errorCode: '错误码',data:'Message对象'}
+     * 示例：{"errorCode":0,"errorMsg":"Operation success","data":{"msgId":76279,"time":1653027946832,"msgSeq":3,"msgType":1,"relMsgSeq":0,"relMsgInfo":"","msgSubType":0,"from":"6088","name":"dlliu-1145 -测试测试","msgBody":"2111111","sessionId":12430,"relSessionId":0,"fromName":"dlliu-1145-测试测试","avatarName":"dlliu-1145 -测试测试","tid":1653027946405}}
+     * Message对象:
+     * {
+     * "msgId":76279,  int 消息id
+     * "time":1653027946832,  int 消息时间戳(unix毫秒)
+     * "msgSeq":3,  int 消息序列号
+     * "msgType":1,  int 消息类型 1表示普通文本消息，2表示文件，3表示图片，4表示系统通知，5表示合并转发
+     * "relMsgSeq":0,  int 关联的原始消息序列号
+     * "relMsgInfo":"",  string 关联消息的内容
+     * "msgSubType":0,  int 系统通知的具体类型：1表示有新用户用户进群，2表示有用户离开群，3表示解散群，4表示更改群名，5表示成员被踢出群聊，6表示群主转移，7表示消息撤回
+     * "from":"6088",  int 消息发送人的user_id
+     * "name":"dlliu-1145 -测试测试",  string 消息发送人的名字
+     * "msgBody":"2111111", string 消息内容
+     * "sessionId":12430,   int 会话id
+     * "relSessionId":0,  int 关联会话的id
+     * "fromName":"dlliu-1145-测试测试",  string 消息发送人的名字(最新)
+     * "avatarName":"dlliu-1145 -测试测试",  string 用于生成头像的名字
+     * "tid":1653027946405  int 会话ID
+     * }
+     *
+     */
+
+
+    chatExt.sendMessage = function (data, callback) {
+      message.sendChatMsg(data, callback);
+    };
+    /**
+     * 设置远端附件信息
+     * @param data {url: '文件url'}
+     * @param callback
+     */
+
+
+    chatExt.setChatFileAttach = function (data, callback) {
+      im.setChatFileAttach(data, callback);
+    };
+
+    var commonService = {};
+    /**
+     * 获取终端版本号
+     * @param callback
+     */
+
+    commonService.getCommonInfo = function (callback) {
+      var currentInfo = {};
+      var desktopVersion = common.getWaveDesktopVersion() || electronEvent.getPluginInfo().desktopVersion;
+      var isWaveSupportPlugin = common.getIsWaveSupportPlugin();
+
+      if (isWaveSupportPlugin === undefined) {
+        isWaveSupportPlugin = electronEvent.getPluginInfo().isWaveSupportPlugin;
+      }
+
+      if (desktopVersion) {
+        currentInfo.waveVersion = desktopVersion;
+        currentInfo.currentSDKVersion = currentSDKVersion;
+        currentInfo.isWaveSupportPlugin = isWaveSupportPlugin;
+        callback({
+          errorCode: restCode.errorCode.SUCCESS,
+          data: currentInfo
+        });
+      } else {
+        callback({
+          errorCode: restCode.errorCode.FAIL,
+          errorInfo: restCode.errorMsg.FAIL
+        });
+      }
+    };
+    /**
+     * 插件拦截器
+     * @param data {interceptField:'需要拦截的url或url上的某些字符', hash:'拦截后跳转至插件的路由'}
+     */
+
+
+    commonService.setPluginURLInterceptor = function (data) {
+      if (!data || !data.interceptField || !data.hash) {
+        console.error('plugin signature empty');
+        return;
+      }
+
+      var interceptorInfo = {
+        interceptField: data.interceptField,
+        hash: data.hash
+      };
+      electronEvent.postMsgToWave(action.setPluginURLInterceptor, interceptorInfo);
+    };
+    /**
+     * 清除缓存
+     * @param data {origin:'需要清除cookie的域， string， 格式：scheme://host:port'}
+     * @param callback
+     */
+
+
+    commonService.clearCookie = function (data, callback) {
+      if (!data || !data.origin) {
+        callback({
+          errorCode: restCode.errorCode.PARAM_ERROR,
+          errorMsg: restCode.errorMsg.PARAM_ERROR
+        });
+        return;
+      }
+
+      var cookieOption = {
+        origin: data.origin,
+        requestId: new Date().getTime()
+      };
+
+      electronEvent.postMsgToWave(action.clearCookie, cookieOption);
+      callback({
+        errorCode: restCode.errorCode.SUCCESS,
+        errorMsg: restCode.errorMsg.SUCCESS
+      });
+    };
+
+    var contact = {};
+    /**
+     * 获取联系人
+     * @param callback
+     */
+
+    contact.getContactList = function (callback) {
+      if (typeof callback !== "function") {
+        console.error('getContactList callback not function');
+        return;
+      }
+
+      var messageParam = {
+        requestId: new Date().getTime()
+      };
+      var request = {
+        messageParam: messageParam,
+        requestId: messageParam.requestId,
+        callback: callback
+      };
+      pluginRequestCallback.push(request);
+      electronEvent.postMsgToWave(action.getContactList, messageParam);
+    };
+
+    var contactExt = {};
+    /**
+     * 获取联系人列表
+     * @param callback {errorCode: '错误码', data:'[], 通讯录对象数组'}
+     * {errorCode: 0, errorMsg: "Operation success", data: [{user}]}
+     * user字段：
+     * area: "kmye_test"  string 开启cloudIM时中配置的区域，未开启时为空
+     * avatarName: "1000"   string 生成头像分机
+     * comment: ""    string 备注
+     * deptId: 628   int 所属部门ID
+     * deviceId: 5   int 所属设备ID
+     * dialExtension: "12343211000"   string 拨号分机
+     * dialPrefix: "1234321"   string 外部呼入的前缀
+     * displayExtension: "(1234321)1000"  string 显示分机
+     * displayInDpt:   int 是否显示在部门层级中 0/1, 0:隐藏，1：显示
+     * email:   string 邮箱
+     * enableContact:   int 是否显示在通讯录列表 0:不显示，1：显示
+     * enableWave:   int 是否使能wave 0:不使能 1：使能
+     * extension:   string 分机号与userName一致
+     * familyNumber:  string  家庭号码
+     * favor:   int 是否被收藏，0/1 0：否 1：是 默认为0
+     * fax:   string 传真
+     * firstName:  string 第一个名字
+     * fullName:  string 全名
+     * icon:   int 是否设置了自定义头像， 0/1, 0:没有,1:有
+     * iconTimestamp:   int 最后一次修改或重置头像的时间戳
+     * lastName:  string  后一个名字
+     * phoneNumber:  string 手机号码
+     * status: string  状态：Idle（空闲），InUse（忙碌），Unavailable(脱机)，Dnd（勿扰），Away（离开）
+     * title:    string 职位
+     * userId:  int User对应的ID
+     * userName:  string 分机号
+     * userType:  int 联系人类型，0/1,0:普通联系人，1:外部联系人
+     * workStatus:  string 工作状态,目前有7种状态：、无（0）、正在会议（1）、正在出差（2）、远程办公（3）、生病请假（4）、正在休假（5）、自定义状态（6），默认为0
+     * workStatusBody:  string 工作状态为自定义时的内容
+     */
+
+    contactExt.getContactList = function (callback) {
+      contact.getContactList(callback);
+    };
+
+    /*
+    * 暴露给上层的接口
+    */
+    var pluginSDK = {};
+    pluginSDK.call = callExt;
+    pluginSDK.log = logExt;
+    pluginSDK.userConfig = userConfigExt;
+    pluginSDK.meeting = meetingExt;
+    pluginSDK.chat = chatExt;
+    pluginSDK.contact = contactExt; //Enum
+
+    pluginSDK.MsgType = MsgType;
+    pluginSDK.MsgSubType = MsgSubType;
+    pluginSDK.SessionType = SessionType;
+    pluginSDK.StatuType = ExtensionStatus;
+    pluginSDK.WorkStatusType = WorkStatus;
+    pluginSDK.CycleType = MeetingCycleType;
+    pluginSDK.ErrorCode = restCode.errorCode;
+    pluginSDK.EventType = pluginEvent;
+    /**
+     * 隐藏窗口
+     */
+
+    pluginSDK.hideWindow = function () {
+      pluginWin.hideWindow();
     };
     /**
      * 关闭窗口
      */
 
 
-    pluginSDK.hideWindow = function () {
-      pluginWin.hideWindow();
+    pluginSDK.closeWindow = function () {
+      pluginWin.closeWindow();
     };
     /**
      * 使用默认窗口并显示
@@ -1470,25 +2659,6 @@
     pluginSDK.hideNotification = function () {
       pluginWin.hideNotificationWindow();
     };
-
-    pluginSDK.userConfig = {};
-    /**
-     * 获取用户信息
-     * @param callback
-     */
-
-    pluginSDK.userConfig.getUserConfig = function (callback) {
-      userConfig.getUserConfig(callback);
-    };
-    /**
-     * 存用户信息
-     * @param data {userConfig:'配置信息'(json)}
-     */
-
-
-    pluginSDK.userConfig.addUserConfig = function (data, callback) {
-      userConfig.addUserConfig(data, callback);
-    };
     /**
      * 设置插件签名
      * @param data {signature:'签名字符串'}
@@ -1496,7 +2666,7 @@
 
 
     pluginSDK.setPluginSignature = function (data) {
-      userConfig.setPluginSignature(data);
+      userConfigExt.setPluginSignature(data);
     };
     /**
      * 事件绑定接口
@@ -1516,6 +2686,33 @@
 
 
     pluginSDK.eventEmitter = bindEvent;
+    /**
+     * 获取通用信息包含：wave终端版本号，当前SDK版本号等
+     * @param callback
+     */
+
+    pluginSDK.getCommonInfo = function (callback) {
+      commonService.getCommonInfo(callback);
+    };
+    /**
+     * 插件拦截器
+     * @param data {interceptField:'需要拦截的url或url上的某些字符', hash:'拦截后跳转至插件的路由'}
+     */
+
+
+    pluginSDK.setPluginURLInterceptor = function (data) {
+      commonService.setPluginURLInterceptor(data);
+    };
+    /**
+     * 清除cookie
+     * @param data {origin:'需要清除cookie的域， string， 格式：scheme://host:port'}
+     * @param callback
+     */
+
+
+    pluginSDK.clearCookie = function (data, callback) {
+      commonService.clearCookie(data, callback);
+    };
 
     return pluginSDK;
 

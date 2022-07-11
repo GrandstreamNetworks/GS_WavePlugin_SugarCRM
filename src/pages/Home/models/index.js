@@ -4,7 +4,7 @@ import { getContact, getFullInfo, post } from '../services';
 
 export default {
     namespace: 'home', state: {},
-    
+
     effects: {
         * getContact({ payload }, { call, put }) {
             console.log("payload", payload)
@@ -25,7 +25,7 @@ export default {
                 displayNotification: connectState === 'SUCCESS',
             };
             const { entry_list = [] } = res;
-            
+
             /**
              * 取出查询到的联系人
              * 根据号码查询，只会查询到一个联系人，所以取第一个
@@ -47,11 +47,14 @@ export default {
                 contactInfo.name = get(fullInfo, ['entry_list', 0, 'name_value_list', 'name', 'value']);
                 contactInfo.title = get(fullInfo, ['entry_list', 0, 'name_value_list', 'title', 'value']);
                 contactInfo.department = get(fullInfo, ['entry_list', 0, 'name_value_list', 'department', 'value']);
+                contactInfo.fax = get(fullInfo, ['entry_list', 0, 'name_value_list', 'phone_fax', 'value']);
+                contactInfo.description = get(fullInfo, ['entry_list', 0, 'name_value_list', 'description', 'value']);
+                contactInfo.email = get(fullInfo, ['entry_list', 0, 'name_value_list', 'email1', 'value']);
                 contactInfo.action = ACTION_TYPE.detail;
             }
             return contactInfo;
         },
-        
+
         * putCallInfo({ payload }, { call, put }) {
             const res = yield call(post, payload);
             yield put({
@@ -61,9 +64,9 @@ export default {
             })
             return res;
         }
-        
+
     },
-    
+
     reducers: {
         save(state, action) {
             return { ...state, ...action.payload }

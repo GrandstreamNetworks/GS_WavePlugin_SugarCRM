@@ -3,18 +3,16 @@ import { Switch } from 'antd';
 import { connect } from 'umi';
 import styles from './index.less'
 
-const IndexPage = ({ userConfig, saveUserConfig, connectState }) => {
+const IndexPage = ({ uploadCall, uploadCallChange, connectState }) => {
 
     const onSwitchChange = checked => {
-        const config = JSON.parse(JSON.stringify(userConfig));
-        config.uploadCall = checked;
-        saveUserConfig(config);
+        uploadCallChange(checked);
     };
 
     return (
         <div className={styles.switch}>
             <Switch
-                checked={userConfig.uploadCall}
+                checked={uploadCall}
                 onChange={onSwitchChange}
                 disabled={connectState !== 'SUCCESS'} />
         </div>
@@ -23,13 +21,13 @@ const IndexPage = ({ userConfig, saveUserConfig, connectState }) => {
 
 export default connect(
     ({ global }) => ({
-        userConfig: global.userConfig,
+        uploadCall: global.uploadCall,
         connectState: global.connectState,
     }),
     (dispatch) => ({
-        saveUserConfig: (payload) =>
+        uploadCallChange: (payload) =>
             dispatch({
-                type: 'global/saveUserConfig',
+                type: 'global/uploadCallChange',
                 payload,
             })
     })

@@ -12,7 +12,7 @@
      * 监听窗口初始化完成
      * 打开默认窗口
      */
-    pluginSDK.eventEmitter.on('onInitPluginWindowOk', function ({ userConfig, pluginPath }) {
+    pluginSDK.eventEmitter.once('onInitPluginWindowOk', function ({ userConfig, pluginPath }) {
         console.log('onInitPluginWindowOk', userConfig);
         pluginSDK.setDefaultWindow({
             width: 482,

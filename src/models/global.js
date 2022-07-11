@@ -1,9 +1,17 @@
 import { get } from 'lodash'
-import { getUserInfo } from '@/services/global';
+import { history } from 'umi'
+import { getUserInfo } from '@/services/global'
 
 export default {
     namespace: 'global', state: {
-        userConfig: {}, sessionId: '', connectState: 'SUCCESS', user: {}, user_id: ''
+        userConfig: {},
+        sessionId: '',
+        connectState: 'SUCCESS',
+        user: {},
+        user_id: '',
+        tokenInfo: {},
+        uploadCall: true,
+        showConfig: {},
     },
 
     effects: {
@@ -12,14 +20,50 @@ export default {
             const user = {};
             user.id = get(res, ['entry_list', 0, 'id']);
             user.name = get(res, ['entry_list', 0, 'name_value_list', 'full_name', 'value']);
-            yield put({
-                type: 'global/save', payload: {
-                    connectState: res?.code || 'SUCCESS',
-                    user,
-                }
-            })
+            if (user.id) {
+                yield put({
+                    type: 'global/save', payload: {
+                        connectState: res?.code || 'SUCCESS', user,
+                    }
+                })
+            }
+            else {
+                yield put({
+                    type: 'global/save', payload: {
+                        connectState: res?.code || 'SUCCESS',
+                    }
+                })
+            }
             return res;
         },
+
+        * uploadCallChange({ payload }, { put, select }) {
+            const { userConfig } = yield select((state) => state.global)
+            userConfig.uploadCall = payload
+            yield put({
+                type: 'saveUserConfig', payload: userConfig,
+            })
+            yield put({
+                type: 'save', payload: {
+                    uploadCall: payload,
+                }
+            })
+        },
+
+        * saveShowConfig({ payload }, { put, select }) {
+            const { userConfig } = yield select((state) => state.global)
+            console.log(userConfig)
+            userConfig.showConfig = payload
+            yield put({
+                type: 'saveUserConfig', payload: userConfig,
+            })
+            yield put({
+                type: 'save', payload: {
+                    showConfig: payload,
+                }
+            })
+        },
+
 
         * saveUserConfig({ payload }, { put }) {
             console.log(payload);
@@ -31,7 +75,18 @@ export default {
                     userConfig: payload
                 },
             })
+        },
+
+        * logout(_, { put, select }) {
+            const { userConfig } = yield select((state) => state.global)
+            userConfig.autoLogin = false;
+            userConfig.password = undefined;
+            yield put({
+                type: 'saveUserConfig', payload: userConfig,
+            })
+            history.replace({ pathname: '/login' })
         }
+
     },
 
     reducers: {

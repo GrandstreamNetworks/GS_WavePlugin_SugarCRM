@@ -1,38 +1,24 @@
-import React, { useEffect, useRef } from 'react';
-import { connect, history, useIntl } from 'umi';
-import { Button, Col, Row } from 'antd';
+import React, { useCallback } from 'react';
+import { connect, useIntl } from 'umi';
 import { stringify } from 'qs';
 import moment from 'moment-timezone';
-import { ConnectError, ConnectState, Footer, SwitchBtn } from '@/components';
-import { ACTION_TYPE, DATE_FORMAT, EVENT_KEY, MODULE_TYPE, SESSION_STORAGE_KEY, WAVE_CALL_TYPE } from '@/constant';
-import { getNotificationBody } from '@/utils/utils';
+import { ConnectError, ConnectState, Footer, ConfigBlock, CallAction } from '@/components';
+import { ACTION_TYPE, DATE_FORMAT, MODULE_TYPE, SESSION_STORAGE_KEY } from '@/constant';
+import { getNotificationBody, getValueByConfig } from '@/utils/utils';
 import styles from './index.less';
 
 
-const HomePage = ({ getContact, putCallInfo, saveUserConfig, userConfig, sessionId, }) => {
+const HomePage = ({ getContact, putCallInfo, uploadCall, sessionId, tokenInfo, showConfig }) => {
     const { formatMessage } = useIntl();
 
     const host = sessionStorage.getItem(SESSION_STORAGE_KEY.host);
-
-    const callNumber = useRef(null);
-
-    /**
-     * 登出
-     */
-    const logoutClick = () => {
-        const config = JSON.parse(JSON.stringify(userConfig));
-        config.autoLogin = false;
-        config.password = undefined;
-        saveUserConfig(config);
-        history.replace({ pathname: '/login' });
-    };
 
     /**
      * 通过号码获取联系人
      */
     const getContactByCallNum = callNum => {
         const params = {
-            callNum, userConfig
+            callNum, userConfig: tokenInfo,
         }
         return getContact(params);
     };
@@ -40,8 +26,8 @@ const HomePage = ({ getContact, putCallInfo, saveUserConfig, userConfig, session
     /**
      * 上报通话信息
      */
-    const uploadCallInfo = (callNum, callStartTimeStamp, callEndTimeStamp, callDirection) => {
-        if (!userConfig.uploadCall) {
+    const uploadCallInfo = useCallback((callNum, callStartTimeStamp, callEndTimeStamp, callDirection) => {
+        if (!uploadCall) {
             return;
         }
         callNum = callNum.replace(/\b(0+)/gi, '');
@@ -73,7 +59,7 @@ const HomePage = ({ getContact, putCallInfo, saveUserConfig, userConfig, session
                 console.log(res);
             });
         });
-    }
+    }, [uploadCall, sessionId, tokenInfo]);
 
     /**
      * 获取sugarCRM系统URL
@@ -87,7 +73,7 @@ const HomePage = ({ getContact, putCallInfo, saveUserConfig, userConfig, session
      * 调用wave接口，打开通知窗口，展示相应信息
      * @param callNum 号码
      */
-    const initCallInfo = callNum => {
+    const initCallInfo = useCallback(callNum => {
         callNum = callNum.replace(/\b(0+)/gi, '');
         getContactByCallNum(callNum).then(contact => {
             console.log('getContact', contact);
@@ -105,141 +91,97 @@ const HomePage = ({ getContact, putCallInfo, saveUserConfig, userConfig, session
             if (contact && contact.record) {
                 url = getUrl(contact);
             }
-            const name = contact?.name;
-            const department = contact?.department;
-            const title = contact?.title;
-            const job = department && title ? department + '|' + title : department || title;
             const pluginPath = sessionStorage.getItem('pluginPath');
+
             const body = {
                 logo: `<div style="margin-bottom: 12px"><img src="${pluginPath}/sugar.svg" alt=""/> Sugar CRM</div>`,
-                info: name ? `<div style="font-weight: bold; text-overflow: ellipsis; white-space:nowrap; overflow: hidden">${name}</div>` : null,
-                PhoneNumber: `<div style="font-weight: bold; text-overflow: ellipsis; white-space:nowrap; overflow: hidden">${callNum}</div>`,
-                title: job ? `<div style="font-weight: bold; text-overflow: ellipsis; white-space:nowrap; overflow: hidden">${job}</div>` : null,
-                action: `<div style="margin-top: 10px;display: flex;justify-content: flex-end;"><button style="background: none; border: none;">
-                             <a href=${url} target="_blank" style="color: #62B0FF">
-                                 ${contact?.record ? formatMessage({ id: 'home.detail' }) : formatMessage({ id: 'home.edit' })}
-                             </a>
-                         </button></div>`
-            };
+            }
+
+            // 根据自定义信息，添加body属性
+            if (contact?.record) {
+                // 将showConfig重复的删除
+                const configList = [...new Set(Object.values(showConfig))]
+                console.log(configList)
+                for (const key in configList) {
+                    console.log(configList[key])
+                    if (!configList[key]) {
+                        continue
+                    }
+
+                    // 取出联系人的信息用于展示
+                    const configValue = getValueByConfig(contact, configList[key])
+                    console.log(configValue)
+                    if (configList[key] === 'Phone') {
+                        Object.defineProperty(body, `config_${key}`, {
+                            value: `<div style="font-weight: bold">${callNum}</div>`,
+                            writable: true,
+                            enumerable: true,
+                            configurable: true
+                        })
+                    }
+                    else if (configValue) {
+                        Object.defineProperty(body, `config_${key}`, {
+                            value: `<div style="font-weight: bold; display: -webkit-box;-webkit-box-orient: vertical;-webkit-line-clamp: 5;overflow: hidden;">${configValue}</div>`,
+                            writable: true,
+                            enumerable: true,
+                            configurable: true
+                        })
+                    }
+                }
+            }
+            else {
+                Object.defineProperty(body, 'phone', {
+                    value: `<div style="font-weight: bold;">${callNum}</div>`,
+                    writable: true,
+                    enumerable: true,
+                    configurable: true
+                })
+            }
+
+            Object.defineProperty(body, 'action', {
+                value: `<div style="margin-top: 10px;display: flex;justify-content: flex-end;"><button style="background: none; border: none;">
+                            <a href=${url} target="_blank" style="color: #62B0FF">
+                                ${contact?.record ? formatMessage({ id: 'home.detail' }) : formatMessage({ id: 'home.edit' })}
+                            </a>
+                        </button></div>`,
+                writable: true,
+                enumerable: true,
+                configurable: true
+            })
 
             console.log('displayNotification');
             pluginSDK.displayNotification({
                 notificationBody: getNotificationBody(body),
             })
         });
-    }
+    }, [tokenInfo, showConfig]);
 
-    useEffect(() => {
-        /**
-         * 监听收到语音/视频来电
-         * 回调函数参数：callType,callNum
-         */
-        pluginSDK.eventEmitter.on(EVENT_KEY.recvP2PIncomingCall, function ({ callType, callNum }) {
-            console.log('onRecvP2PIncomingCall', callType, callNum);
-            callNumber.current = callNum
-            initCallInfo(callNum);
-        });
-
-        /**
-         * 监听wave发起语音/视频
-         * 回调函数参数：callType,callNum
-         */
-        pluginSDK.eventEmitter.on(EVENT_KEY.initP2PCall, function ({ callType, callNum }) {
-            console.log('onHangupP2PCall', callType, callNum);
-            callNumber.current = callNum
-            initCallInfo(callNum);
-        });
-
-        return function cleanup() {
-            pluginSDK.eventEmitter.off(EVENT_KEY.recvP2PIncomingCall);
-
-            pluginSDK.eventEmitter.off(EVENT_KEY.initP2PCall);
-        };
-    }, [userConfig]);
-
-    useEffect(() => {
-        /**
-         * 监听拒绝语音/视频
-         * 回调函数参数：callType,callNum
-         */
-        pluginSDK.eventEmitter.on(EVENT_KEY.rejectP2PCall, function ({ callType, callNum }) {
-            console.log('onRejectP2PCall', callType, callNum);
-            uploadCallInfo(callNum, 0, 0, WAVE_CALL_TYPE.in);
-            if (callNumber.current === callNum) {
-                setTimeout(() => {
-                    // @ts-ignore
-                    pluginSDK.hideNotification();
-                }, 1000)
-            }
-        });
-
-        /**
-         * 监听挂断语音/视频
-         * 回调函数参数：callType,callNum
-         */
-        pluginSDK.eventEmitter.on(EVENT_KEY.hangupP2PCall, function (data) {
-            console.log('onHangupP2PCall', data);
-            let { callNum, callStartTimeStamp, callEndTimeStamp, callDirection } = data;
-            callDirection = callDirection === 'in' ? WAVE_CALL_TYPE.in : WAVE_CALL_TYPE.out;
-            uploadCallInfo(callNum, callStartTimeStamp ?? 0, callEndTimeStamp ?? 0, callDirection);
-            if (callNumber.current === callNum) {
-                setTimeout(() => {
-                    // @ts-ignore
-                    pluginSDK.hideNotification();
-                }, 1000)
-            }
-        });
-
-        pluginSDK.eventEmitter.on(EVENT_KEY.p2PCallCanceled, function ({ callType, callNum }) {
-            console.log('p2PCallCanceled', callType, callNum);
-            uploadCallInfo(callNum, 0, 0, WAVE_CALL_TYPE.miss);
-            if (callNumber.current === callNum) {
-                setTimeout(() => {
-                    // @ts-ignore
-                    pluginSDK.hideNotification();
-                }, 1000)
-            }
-        });
-
-        return function cleanUp() {
-            pluginSDK.eventEmitter.off(EVENT_KEY.rejectP2PCall);
-
-            pluginSDK.eventEmitter.off(EVENT_KEY.hangupP2PCall);
-
-            pluginSDK.eventEmitter.off(EVENT_KEY.p2PCallCanceled);
-        }
-    }, [userConfig, sessionId])
-
-    return (<>
-        <ConnectError />
-        <div className={styles.homePage}>
-            <ConnectState />
-            <div className={styles.callConfig}>
-                <Row>
-                    <Col span={19}>
-                        <span className={styles.spanLabel}>{formatMessage({ id: 'home.Synchronize' })}</span>
-                    </Col>
-                    <Col span={4}>
-                        <SwitchBtn />
-                    </Col>
-                </Row>
+    return (
+        <>
+            <CallAction initCallInfo={initCallInfo} uploadCallInfo={uploadCallInfo} />
+            <ConnectError />
+            <div className={styles.homePage}>
+                <ConnectState />
+                <ConfigBlock />
             </div>
-            <Button onClick={logoutClick}>{formatMessage({ id: 'home.logout' })}</Button>
-        </div>
-        <Footer url={`${host}/index.php`} message={formatMessage({ id: 'home.toCRM' })} />
-    </>);
+            <Footer url={`${host}/index.php`} message={formatMessage({ id: 'home.toCRM' })} />
+        </>
+    );
 };
 
-export default connect(({ global }) => ({
-    userConfig: global.userConfig, sessionId: global.sessionId,
-}), (dispatch) => ({
-    getContact: payload => dispatch({
-        type: 'home/getContact', payload,
-    }), putCallInfo: payload => dispatch({
-        type: 'home/putCallInfo', payload
-    }), saveUserConfig: payload => dispatch({
-        type: 'global/saveUserConfig', payload,
-    }), save: payload => dispatch({
-        type: 'global/save', payload,
+export default connect(
+    ({ global }) => ({
+        sessionId: global.sessionId,
+        tokenInfo: global.tokenInfo,
+        uploadCall: global.uploadCall,
+        showConfig: global.showConfig,
     }),
-}))(HomePage);
+    (dispatch) => ({
+        getContact: payload => dispatch({
+            type: 'home/getContact', payload,
+        }),
+        putCallInfo: payload => dispatch({
+            type: 'home/putCallInfo', payload
+        })
+    })
+)(HomePage);

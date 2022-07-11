@@ -25,12 +25,12 @@ import styles from './index.less';
  * @returns {JSX.Element}
  * @constructor
  */
-const IndexPage = ({ login, saveUserConfig, loginLoading, getUserInfo }) => {
+const IndexPage = ({ login, saveUserConfig, save, loginLoading, getUserInfo }) => {
     const [errorMessage, setErrorMessage] = useState('');
     const [remember, setRemember] = useState(true);
     const [form] = Form.useForm();
     const { formatMessage } = useIntl();
-    
+
     /**
      * 自动登录状态更改
      * @param e
@@ -38,11 +38,11 @@ const IndexPage = ({ login, saveUserConfig, loginLoading, getUserInfo }) => {
     const onCheckChange = e => {
         setRemember(e.target.checked);
     };
-    
+
     const onfocus = () => {
         setErrorMessage('');
     }
-    
+
     /**
      * 登录成功，页面跳转
      * 跳转home页
@@ -50,7 +50,7 @@ const IndexPage = ({ login, saveUserConfig, loginLoading, getUserInfo }) => {
     const loginSuccess = () => {
         history.replace({ pathname: '/home' });
     }
-    
+
     /**
      * 获取用户信息
      * @param {string} user_id
@@ -60,10 +60,9 @@ const IndexPage = ({ login, saveUserConfig, loginLoading, getUserInfo }) => {
             loginSuccess();
         });
     }
-    
+
     const onFinish = async values => {
         sessionStorage.setItem(SESSION_STORAGE_KEY.host, values.hostAddress);
-        sessionStorage.setItem(SESSION_STORAGE_KEY.user, values.username);
         login(values).then(res => {
             if (res?.error) {
                 setErrorMessage(res?.error);
@@ -74,17 +73,33 @@ const IndexPage = ({ login, saveUserConfig, loginLoading, getUserInfo }) => {
                 return;
             }
             const data = {
-                ...values,
-                password: remember ? values.password : undefined,
+                hostAddress: values.hostAddress,
+                tokenInfo: {
+                    username: values.username,
+                    password: remember ? values.password : undefined,
+                },
                 autoLogin: remember,
                 uploadCall: values.uploadCall ?? true,
+                showConfig: values.showConfig ?? {
+                    first: 'Name', second: 'Phone', third: 'None', forth: 'None', fifth: 'None',
+                },
             }
+            save({
+                tokenInfo: {
+                    username: values.username,
+                    password: remember ? values.password : undefined,
+                },
+                uploadCall: values.uploadCall ?? true,
+                showConfig: values.showConfig ?? {
+                    first: 'Name', second: 'Phone', third: 'None', forth: 'None', fifth: 'None',
+                },
+            });
             saveUserConfig(data)
             const user_id = get(res, ['name_value_list', 'user_id', 'value']);
             getUser(user_id);
         })
     };
-    
+
     /**
      * 调用wave接口，获取用户信息，自动登录
      */
@@ -96,12 +111,12 @@ const IndexPage = ({ login, saveUserConfig, loginLoading, getUserInfo }) => {
                 console.log(userConfig);
                 form.setFieldsValue(userConfig);
                 if (userConfig.autoLogin) {
-                    onFinish(userConfig);
+                    onFinish({ ...userConfig.tokenInfo, ...userConfig });
                 }
             }
         })
     }, [])
-    
+
     return (<>
         {errorMessage && <div className={styles.errorDiv}>
             <div className={styles.errorMessage}>{formatMessage({ id: errorMessage })}</div>
@@ -122,7 +137,7 @@ const IndexPage = ({ login, saveUserConfig, loginLoading, getUserInfo }) => {
                         }]}
                     >
                         <Input placeholder={formatMessage({ id: 'login.host.address' })}
-                               prefix={<Image src={HostIcon} preview={false}/>}/>
+                            prefix={<Image src={HostIcon} preview={false} />} />
                     </Form.Item>
                     <Form.Item
                         name="username"
@@ -131,7 +146,7 @@ const IndexPage = ({ login, saveUserConfig, loginLoading, getUserInfo }) => {
                         }]}
                     >
                         <Input placeholder={formatMessage({ id: 'login.username' })}
-                               prefix={<Image src={AccountIcon} preview={false}/>}
+                            prefix={<Image src={AccountIcon} preview={false} />}
                         />
                     </Form.Item>
                     <Form.Item
@@ -141,9 +156,9 @@ const IndexPage = ({ login, saveUserConfig, loginLoading, getUserInfo }) => {
                         }]}
                     >
                         <Input.Password placeholder={formatMessage({ id: 'login.password' })}
-                                        prefix={<Image src={CodeIcon} preview={false}/>}
-                                        iconRender={visible => (visible ? <Image src={OpenIcon} preview={false}/> :
-                                            <Image src={CloseIcon} preview={false}/>)}
+                            prefix={<Image src={CodeIcon} preview={false} />}
+                            iconRender={visible => (visible ? <Image src={OpenIcon} preview={false} /> :
+                                <Image src={CloseIcon} preview={false} />)}
                         />
                     </Form.Item>
                 </div>
@@ -160,18 +175,30 @@ const IndexPage = ({ login, saveUserConfig, loginLoading, getUserInfo }) => {
             </Form>
         </div>
         <Footer url="https://documentation.grandstream.com/knowledge-base/wave-crm-add-ins/#overview"
-                message={formatMessage({ id: 'login.user.guide' })}/>
+            message={formatMessage({ id: 'login.user.guide' })} />
     </>);
 };
 
-export default connect(({ loading }) => ({
-    loginLoading: loading.effects['login/login'] || loading.effects['global/getUserInfo'],
-}), (dispatch) => ({
-    login: payload => dispatch({
-        type: 'login/login', payload,
-    }), getUserInfo: payload => dispatch({
-        type: 'global/getUserInfo', payload
-    }), saveUserConfig: payload => dispatch({
-        type: 'global/saveUserConfig', payload,
+export default connect(
+    ({ loading }) => ({
+        loginLoading: loading.effects['login/login'] || loading.effects['global/getUserInfo'],
+    }),
+    (dispatch) => ({
+        login: payload => dispatch({
+            type: 'login/login',
+            payload,
+        }),
+        getUserInfo: payload => dispatch({
+            type: 'global/getUserInfo',
+            payload
+        }),
+        saveUserConfig: payload => dispatch({
+            type: 'global/saveUserConfig',
+            payload,
+        }),
+        save: payload => dispatch({
+            type: 'global/save',
+            payload
+        })
     })
-}),)(IndexPage);
+)(IndexPage);

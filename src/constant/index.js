@@ -68,7 +68,29 @@ const WAVE_CALL_TYPE = {
     miss: 'Missed',
 }
 
+const CONFIG_SHOW = {
+    None: undefined,
+    Name: 'name',
+    Phone: "Phone",
+    Email: 'email',
+    Fax: 'fax',
+    Department: 'department',
+    Title: 'title',
+    Description: 'description'
+
+}
+
+const NotificationConfig = {
+    first: 'information 1',
+    second: 'information 2',
+    third: 'information 3',
+    forth: 'information 4',
+    fifth: 'information 5'
+}
+
 export {
+    CONFIG_SHOW,
+    NotificationConfig,
     ACTION_TYPE,
     MODULE_TYPE,
     GLOBAL_MESSAGE,
