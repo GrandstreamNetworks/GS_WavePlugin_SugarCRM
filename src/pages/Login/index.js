@@ -17,12 +17,6 @@ import styles from './index.less';
  * hostAddress: 部署的sugarCRM服务地址
  * username: 用户名
  * password: 用户密码
- * @param login 登录方法，调用登录接口，获取鉴权信息{sessionId}
- * @param save
- * @param saveUserConfig
- * @param loginLoading loginLoading 加载状态
- * @param getUserInfo 后去用户信息
- * @returns {JSX.Element}
  * @constructor
  */
 const IndexPage = ({ login, saveUserConfig, save, loginLoading, getUserInfo }) => {
@@ -73,8 +67,8 @@ const IndexPage = ({ login, saveUserConfig, save, loginLoading, getUserInfo }) =
                 return;
             }
             const data = {
-                hostAddress: values.hostAddress,
                 tokenInfo: {
+                    hostAddress: values.hostAddress,
                     username: values.username,
                     password: remember ? values.password : undefined,
                 },
@@ -86,6 +80,7 @@ const IndexPage = ({ login, saveUserConfig, save, loginLoading, getUserInfo }) =
             }
             save({
                 tokenInfo: {
+                    hostAddress: values.hostAddress,
                     username: values.username,
                     password: remember ? values.password : undefined,
                 },
@@ -103,13 +98,13 @@ const IndexPage = ({ login, saveUserConfig, save, loginLoading, getUserInfo }) =
     /**
      * 调用wave接口，获取用户信息，自动登录
      */
-    useEffect(async () => {
+    useEffect(() => {
         pluginSDK.userConfig.getUserConfig(function ({ errorCode, data }) {
             console.log(errorCode, data);
             if (errorCode === 0 && data) {
                 const userConfig = JSON.parse(data);
                 console.log(userConfig);
-                form.setFieldsValue(userConfig);
+                form.setFieldsValue(userConfig?.tokenInfo);
                 if (userConfig.autoLogin) {
                     onFinish({ ...userConfig.tokenInfo, ...userConfig });
                 }

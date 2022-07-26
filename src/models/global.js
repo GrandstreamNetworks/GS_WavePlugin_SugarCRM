@@ -12,6 +12,7 @@ export default {
         tokenInfo: {},
         uploadCall: true,
         showConfig: {},
+        callState: new Map(),
     },
 
     effects: {
@@ -80,7 +81,7 @@ export default {
         * logout(_, { put, select }) {
             const { userConfig } = yield select((state) => state.global)
             userConfig.autoLogin = false;
-            userConfig.password = undefined;
+            userConfig.tokenInfo.password = undefined;
             yield put({
                 type: 'saveUserConfig', payload: userConfig,
             })

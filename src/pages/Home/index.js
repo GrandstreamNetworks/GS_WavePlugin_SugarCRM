@@ -8,7 +8,7 @@ import { getNotificationBody, getValueByConfig } from '@/utils/utils';
 import styles from './index.less';
 
 
-const HomePage = ({ getContact, putCallInfo, uploadCall, sessionId, tokenInfo, showConfig }) => {
+const HomePage = ({ getContact, putCallInfo, uploadCall, sessionId, tokenInfo, showConfig, callState }) => {
     const { formatMessage } = useIntl();
 
     const host = sessionStorage.getItem(SESSION_STORAGE_KEY.host);
@@ -76,8 +76,8 @@ const HomePage = ({ getContact, putCallInfo, uploadCall, sessionId, tokenInfo, s
     const initCallInfo = useCallback(callNum => {
         callNum = callNum.replace(/\b(0+)/gi, '');
         getContactByCallNum(callNum).then(contact => {
-            console.log('getContact', contact);
-            if (!contact?.displayNotification) {
+            console.log("callState", callState);
+            if (!contact?.displayNotification || !callState.get(callNum)) {
                 return;
             }
             /**
@@ -105,56 +105,35 @@ const HomePage = ({ getContact, putCallInfo, uploadCall, sessionId, tokenInfo, s
                 for (const key in configList) {
                     console.log(configList[key])
                     if (!configList[key]) {
-                        continue
+                        continue;
                     }
 
                     // 取出联系人的信息用于展示
-                    const configValue = getValueByConfig(contact, configList[key])
-                    console.log(configValue)
+                    const configValue = getValueByConfig(contact, configList[key]);
+                    console.log(configValue);
                     if (configList[key] === 'Phone') {
-                        Object.defineProperty(body, `config_${key}`, {
-                            value: `<div style="font-weight: bold">${callNum}</div>`,
-                            writable: true,
-                            enumerable: true,
-                            configurable: true
-                        })
+                        body[`config_${key}`] = `<div style="font-weight: bold">${callNum}</div>`
                     }
                     else if (configValue) {
-                        Object.defineProperty(body, `config_${key}`, {
-                            value: `<div style="font-weight: bold; display: -webkit-box;-webkit-box-orient: vertical;-webkit-line-clamp: 5;overflow: hidden;">${configValue}</div>`,
-                            writable: true,
-                            enumerable: true,
-                            configurable: true
-                        })
+                        body[`config_${key}`] = `<div style="font-weight: bold; display: -webkit-box;-webkit-box-orient: vertical;-webkit-line-clamp: 5;overflow: hidden;word-break: break-all;text-overflow: ellipsis;">${configValue}</div>`
                     }
                 }
             }
             else {
-                Object.defineProperty(body, 'phone', {
-                    value: `<div style="font-weight: bold;">${callNum}</div>`,
-                    writable: true,
-                    enumerable: true,
-                    configurable: true
-                })
+                body.phone = `<div style="font-weight: bold;">${callNum}</div>`
             }
-
-            Object.defineProperty(body, 'action', {
-                value: `<div style="margin-top: 10px;display: flex;justify-content: flex-end;"><button style="background: none; border: none;">
-                            <a href=${url} target="_blank" style="color: #62B0FF">
-                                ${contact?.record ? formatMessage({ id: 'home.detail' }) : formatMessage({ id: 'home.edit' })}
-                            </a>
-                        </button></div>`,
-                writable: true,
-                enumerable: true,
-                configurable: true
-            })
+            body.action = `<div style="margin-top: 10px;display: flex;justify-content: flex-end;"><button style="background: none; border: none;">
+                     <a href=${url} target="_blank" style="color: #62B0FF">
+                         ${contact?.record ? formatMessage({ id: 'home.detail' }) : formatMessage({ id: 'home.edit' })}
+                     </a>
+                 </button></div>`;
 
             console.log('displayNotification');
             pluginSDK.displayNotification({
                 notificationBody: getNotificationBody(body),
             })
         });
-    }, [tokenInfo, showConfig]);
+    }, [tokenInfo, showConfig, callState]);
 
     return (
         <>
@@ -175,6 +154,7 @@ export default connect(
         tokenInfo: global.tokenInfo,
         uploadCall: global.uploadCall,
         showConfig: global.showConfig,
+        callState: global.callState,
     }),
     (dispatch) => ({
         getContact: payload => dispatch({
