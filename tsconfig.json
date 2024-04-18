@@ -9,7 +9,9 @@
     "esModuleInterop": true,
     "sourceMap": true,
     "baseUrl": "./",
+    "allowJs": true,
     "strict": true,
+    "outDir": "./dist",
     "paths": {
       "@/*": ["src/*"],
       "@@/*": ["src/.umi/*"]
